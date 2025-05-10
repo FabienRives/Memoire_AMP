@@ -93,15 +93,48 @@ document.addEventListener('DOMContentLoaded', function () {
   }
 
   // Chargement des données GeoJSON
-  const p1 = fetch('GisementFoncier.geojson')
-    .then(r => r.json()).then(data => {
+  // Détecter si on est en local ou sur GitHub Pages
+  const basePath = location.hostname === 'localhost' || location.hostname === '127.0.0.1' 
+    ? '' 
+    : '/Memoire_AMP';
+
+  // Fonction pour gérer les erreurs de chargement
+  function handleFetchError(response, fileName) {
+    if (!response.ok) {
+      throw new Error(`Erreur HTTP! Status: ${response.status} lors du chargement de ${fileName}`);
+    }
+    return response.json().catch(err => {
+      console.error(`Erreur de parsing JSON pour ${fileName}:`, err);
+      throw new Error(`Le fichier ${fileName} n'est pas un JSON valide`);
+    });
+  }
+
+  const p1 = fetch(`${basePath}/GisementFoncier.geojson`)
+    .then(r => handleFetchError(r, 'GisementFoncier.geojson'))
+    .then(data => {
       log('GeoJSON gisement chargé', `${data.features.length} entités`);
       gisementData = data;
+    })
+    .catch(error => {
+      console.error('Erreur de chargement du gisement:', error);
+      overlay.innerHTML += `<p class="error">Erreur: ${error.message}</p>`;
     });
-  const p2 = fetch('EPCI_AMP.geojson')
-    .then(r => r.json()).then(data => layers.epci.addData(data));
-  const p3 = fetch('Communes_AMP.geojson')
-    .then(r => r.json()).then(data => layers.communes.addData(data));
+
+  const p2 = fetch(`${basePath}/EPCI_AMP.geojson`)
+    .then(r => handleFetchError(r, 'EPCI_AMP.geojson'))
+    .then(data => layers.epci.addData(data))
+    .catch(error => {
+      console.error('Erreur de chargement EPCI:', error);
+      overlay.innerHTML += `<p class="error">Erreur: ${error.message}</p>`;
+    });
+
+  const p3 = fetch(`${basePath}/Communes_AMP.geojson`)
+    .then(r => handleFetchError(r, 'Communes_AMP.geojson'))
+    .then(data => layers.communes.addData(data))
+    .catch(error => {
+      console.error('Erreur de chargement communes:', error);
+      overlay.innerHTML += `<p class="error">Erreur: ${error.message}</p>`;
+    });
 
   Promise.all([p1, p2, p3]).then(() => {
     // Calculer les centroïdes des features pour optimiser les performances
