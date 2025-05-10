@@ -93,15 +93,66 @@ document.addEventListener('DOMContentLoaded', function () {
   }
 
   // Chargement des données GeoJSON
-  const p1 = fetch('GisementFoncier.geojson')
-    .then(r => r.json()).then(data => {
+  // Déterminer si on est en local ou sur GitHub Pages
+  const isLocal = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
+  
+  // Fonction pour obtenir l'URL appropriée selon l'environnement
+  function getFileUrl(filename) {
+    if (isLocal) {
+      return filename; // Chemin local
+    } else {
+      // URL raw de GitHub (utiliser la branche 'master' ou 'main' selon votre configuration)
+      return `https://raw.githubusercontent.com/FabienRives/Memoire_AMP/master/${filename}`;
+    }
+  }
+
+  // Fonction pour gérer les erreurs de fetch
+  function fetchWithErrorHandling(url, name) {
+    return fetch(url)
+      .then(response => {
+        if (!response.ok) {
+          throw new Error(`Erreur HTTP ${response.status} pour ${name}`);
+        }
+        return response.text();
+      })
+      .then(text => {
+        try {
+          // Vérifier si la réponse commence par 'version' (signe d'un fichier Git LFS)
+          if (text.trim().startsWith('version https://git-lfs.github.com/')) {
+            throw new Error(`Le fichier ${name} est un pointeur Git LFS. Accédez-y directement via l'URL raw de GitHub.`);
+          }
+          return JSON.parse(text);
+        } catch (e) {
+          console.error(`Erreur de parsing JSON pour ${name}:`, e);
+          console.error(`Début du contenu reçu: ${text.substring(0, 100)}...`);
+          throw e;
+        }
+      });
+  }
+
+  const p1 = fetchWithErrorHandling(getFileUrl('GisementFoncier.geojson'), 'GisementFoncier.geojson')
+    .then(data => {
       log('GeoJSON gisement chargé', `${data.features.length} entités`);
       gisementData = data;
+    })
+    .catch(error => {
+      console.error('Erreur de chargement du gisement:', error);
+      alert(`Erreur lors du chargement de GisementFoncier.geojson: ${error.message}`);
     });
-  const p2 = fetch('EPCI_AMP.geojson')
-    .then(r => r.json()).then(data => layers.epci.addData(data));
-  const p3 = fetch('Communes_AMP.geojson')
-    .then(r => r.json()).then(data => layers.communes.addData(data));
+
+  const p2 = fetchWithErrorHandling(getFileUrl('EPCI_AMP.geojson'), 'EPCI_AMP.geojson')
+    .then(data => layers.epci.addData(data))
+    .catch(error => {
+      console.error('Erreur de chargement EPCI:', error);
+      alert(`Erreur lors du chargement de EPCI_AMP.geojson: ${error.message}`);
+    });
+
+  const p3 = fetchWithErrorHandling(getFileUrl('Communes_AMP.geojson'), 'Communes_AMP.geojson')
+    .then(data => layers.communes.addData(data))
+    .catch(error => {
+      console.error('Erreur de chargement communes:', error);
+      alert(`Erreur lors du chargement de Communes_AMP.geojson: ${error.message}`);
+    });
 
   Promise.all([p1, p2, p3]).then(() => {
     // Calculer les centroïdes des features pour optimiser les performances
