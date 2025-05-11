@@ -62,7 +62,6 @@ document.addEventListener('DOMContentLoaded', function () {
       style: { color: '#28a745', weight: 2 },
       onEachFeature: function(feature, layer) {
         if (feature.properties) {
-          // Créer le contenu HTML
           let content = '<div class="popup">';
           if (feature.properties.nom || feature.properties.NOM) {
             content += `<h4>${feature.properties.nom || feature.properties.NOM}</h4>`;
@@ -73,6 +72,194 @@ document.addEventListener('DOMContentLoaded', function () {
           }
           content += '</table></div>';
           layer.bindPopup(content, { maxHeight: 300, maxWidth: 300 });
+        }
+      }
+    }),
+    moraux: L.geoJSON(null, {
+      style: { color: '#4E79A7', weight: 2 },
+      onEachFeature: function(feature, layer) {
+        if (feature.properties) {
+          // Champs et couleurs pour le diagramme secteur
+          const fields = [
+            'PourcentageComm',
+            'PourcentageCopro',
+            'PourcentageDepart',
+            'PourcentageHLM',
+            'PourcentagePMNR',
+            'PourcentageRegion',
+            'PourcentageSEM',
+            'PourcentageEP',
+            'PourcentageEtat',
+            'PourcentageAssocies',
+          ];
+          
+          // Correspondance entre les champs de pourcentage et de surface
+          const surfaceFields = [
+            'SurfComm',
+            'SurfCopro',
+            'SurfDepart',
+            'SurfHLM',
+            'SurfPMNR',
+            'SurfRegion',
+            'SurfSEM',
+            'SurfEP',
+            'SurfEtat',
+            'SurfAssocies',
+          ];
+          const labels = [
+            'Commune',
+            'Copropriétaires',
+            'Département',
+            'Office HLM',
+            'Personnes morales non remarquables',
+            'Région',
+            'Société d\'économie mixte',
+            'Établissements publics',
+            'État',
+            'Associés',
+          ];
+          const colors = [
+            '#F28E2B', // orange Commune
+            '#9C755F', // brun Copropriétaires
+            '#76B7B2', // turquoise Département
+            '#EDC948', // jaune doré Office HLM
+            '#4E79A7', // bleu PMNR (Personnes morales non remarquables)
+            '#B07AA1', // violet Région
+            '#FF9DA7', // rose clair SEM
+            '#59A14F', // vert Établissements publics
+            '#E15759', // rouge État
+            '#BAB0AC', // gris clair Associés
+          ];
+          // Extraire les valeurs (en pourcentage) et de surface, puis préparer tri
+          let rawData = fields.map((f, i) => ({
+            value: Number(feature.properties[f]) || 0,
+            label: labels[i],
+            color: colors[i],
+            surface: Number(feature.properties[surfaceFields[i]]) || 0
+          }));
+          // Trier par ordre décroissant selon la surface
+          rawData.sort((a, b) => b.surface - a.surface);
+          // Décomposer pour Chart.js
+          const data = rawData.map(d => d.value);
+          const sortedLabels = rawData.map(d => d.label);
+          const sortedColors = rawData.map(d => d.color);
+          // Générer un ID unique pour le canvas
+          const canvasId = 'pie-moraux-' + (feature.properties.code_insee || feature.properties.insee || Math.random().toString(36).substr(2, 6));
+          let content = '<div class="popup">';
+          if (feature.properties.nom || feature.properties.NOM) {
+            content += `<h4>${feature.properties.nom || feature.properties.NOM}</h4>`;
+          }
+          content += '<table>';
+          if (feature.properties.NOM_M) {
+            content += `<tr><th>NOM_M</th><td>${feature.properties.NOM_M}</td></tr>`;
+          }
+          if (feature.properties.INSEE_COM) {
+            content += `<tr><th>INSEE_COM</th><td>${feature.properties.INSEE_COM}</td></tr>`;
+          }
+          content += '</table>';
+          content += `<div style=\"margin-top:10px;text-align:center\"><canvas id=\"${canvasId}\" width=\"400\" height=\"400\"></canvas></div>`;
+          content += `<div style=\"text-align:center;margin-top:8px;\"><button id=\"open-diag-${canvasId}\" style=\"margin:0 auto;display:inline-block;padding:6px 16px;font-size:15px;cursor:pointer;\">Ouvrir le diagramme dans une nouvelle fenêtre</button></div>`;
+          content += '</div>';
+          layer.bindPopup(content, {
+            maxHeight: 600, maxWidth: 500,
+            autoPan: true
+          });
+          layer.on('popupopen', function() {
+            // Crée le diagramme secteur Chart.js
+            const ctx = document.getElementById(canvasId).getContext('2d');
+            new Chart(ctx, {
+              type: 'pie',
+              data: {
+                labels: sortedLabels,
+                datasets: [{
+                  data: data,
+                  backgroundColor: sortedColors,
+                  borderWidth: 1
+                }]
+              },
+              options: {
+                responsive: false,
+                plugins: {
+                  legend: { position: 'bottom', labels: { font: { size: 12 } } },
+                  title: { display: true, text: 'Répartition de la surface appartenant à des propriétaires moraux (%)', font: { size: 15 } }
+                }
+              }
+            });
+            // Ajout du listener sur le bouton d'ouverture
+            const btn = document.getElementById('open-diag-' + canvasId);
+            if (btn) {
+              btn.addEventListener('click', function() {
+                const win = window.open('', '_blank', 'width=600,height=800');
+                win.document.write(`
+                  <html><head>
+                  <title>Diagramme secteur - Répartition de la surface appartenant à des propriétaires moraux</title>
+                  <script src=\"https://cdn.jsdelivr.net/npm/chart.js\"></script>
+                  <style>
+                    body { font-family: Arial, sans-serif; margin: 30px; }
+                    h2 { text-align:center; }
+                    .diag-container { text-align:center; margin-bottom:30px; }
+                    table { margin: 0 auto 30px auto; border-collapse: collapse; }
+                    th,td { border:1px solid #ccc; padding:8px 16px; }
+                    th { background:#f0f0f0; }
+                  </style>
+                  </head><body>
+                  <h2>Répartition de la surface appartenant à des propriétaires moraux (%)</h2>
+                  <div class=\"diag-container\"><canvas id=\"diag-canvas\" width=\"500\" height=\"500\"></canvas></div>
+                  <table><thead><tr><th>Catégorie</th><th>Surface (ha)</th><th>Pourcentage de surface (%)</th></tr></thead><tbody>
+                  ${rawData.map(d => `<tr><td>${d.label}</td><td>${d.surface.toLocaleString('fr-FR')}</td><td>${d.value}</td></tr>`).join('')}
+                  </tbody></table>
+                  <script>
+                    new Chart(document.getElementById('diag-canvas').getContext('2d'), {
+                      type: 'pie',
+                      data: {
+                        labels: ${JSON.stringify(sortedLabels)},
+                        datasets: [{
+                          data: ${JSON.stringify(data)},
+                          backgroundColor: ${JSON.stringify(sortedColors)},
+                          borderWidth: 1
+                        }]
+                      },
+                      options: {
+                        responsive: false,
+                        plugins: {
+                          legend: { position: 'bottom', labels: { font: { size: 15 } } },
+                          title: { display: false }
+                        }
+                      }
+                    });
+                  <\/script>
+                  </body></html>
+                `);
+                win.document.close();
+              });
+            }
+          });
+          layer.bindPopup(content, {
+            maxHeight: 600, maxWidth: 500,
+            autoPan: true
+          });
+          layer.on('popupopen', function() {
+            // Crée le diagramme secteur Chart.js
+            const ctx = document.getElementById(canvasId).getContext('2d');
+            new Chart(ctx, {
+              type: 'pie',
+              data: {
+                labels: sortedLabels,
+                datasets: [{
+                  data: data,
+                  backgroundColor: sortedColors,
+                  borderWidth: 1
+                }]
+              },
+              options: {
+                responsive: false,
+                plugins: {
+                  legend: { position: 'bottom', labels: { font: { size: 12 } } },
+                  title: { display: true, text: 'Répartition de la surface appartenant à des propriétaires moraux (%)', font: { size: 15 } }
+                }
+              }
+            });
+          });
         }
       }
     }),
@@ -93,18 +280,20 @@ document.addEventListener('DOMContentLoaded', function () {
   }
 
   // Chargement des données GeoJSON
-  // Chargement des données GeoJSON
   const p1 = fetch('GisementFoncier.geojson')
-    .then(r => r.json()).then(data => {
-      log('GeoJSON gisement chargé', `${data.features.length} entités`);
-      gisementData = data;
-    });
+  .then(r => r.json())
+  .then(data => {
+    log('GeoJSON gisement chargé', `${data.features.length} entités`);
+    gisementData = data;
+  });
   const p2 = fetch('EPCI_AMP.geojson')
     .then(r => r.json()).then(data => layers.epci.addData(data));
   const p3 = fetch('Communes_AMP.geojson')
     .then(r => r.json()).then(data => layers.communes.addData(data));
+  const p4 = fetch('ComPourcPropMoraux.geojson')
+    .then(r => r.json()).then(data => layers.moraux.addData(data));
 
-  Promise.all([p1, p2, p3]).then(() => {
+  Promise.all([p1, p2, p3, p4]).then(() => {
     // Calculer les centroïdes des features pour optimiser les performances
     function calculateCentroids() {
       log('Calcul des centroïdes', 'Démarrage...');
@@ -345,10 +534,15 @@ document.addEventListener('DOMContentLoaded', function () {
     // Fonction pour mettre à jour la couche gisement accessible dans tout le code
     window.updateGisementLayer = updateGisementLayer;
     
-    // Ajoute la couche EPCI par défaut
-    layers.epci.addTo(map);
+    // Ajoute la couche Communes AMP par défaut
+    layers.communes.addTo(map);
 
-    // Ajoute la couche gisement si la checkbox est cochée au démarrage
+    // Vérifie si les autres couches sont cochées et les ajoute si nécessaire
+    const epciCheckbox = document.getElementById('layer-epci');
+    if (epciCheckbox && epciCheckbox.checked) {
+      layers.epci.addTo(map);
+    }
+    
     const gisementCheckbox = document.getElementById('layer-gisement');
     if (gisementCheckbox && gisementCheckbox.checked) {
       updateGisementLayer();
@@ -431,7 +625,7 @@ document.addEventListener('DOMContentLoaded', function () {
           window.cleanLayers();
         }
       } else {
-        // Autres couches (EPCI, communes...)
+        // Autres couches (EPCI, communes, moraux...)
         if (e.target.checked) {
           layers[name].addTo(map);
         } else {
@@ -440,6 +634,14 @@ document.addEventListener('DOMContentLoaded', function () {
       }
     });
   });
+
+  // Gestion du color picker pour la couche moraux
+  const colorMoraux = document.getElementById('color-moraux');
+  if (colorMoraux) {
+    colorMoraux.addEventListener('input', function(e) {
+      layers.moraux.setStyle({ color: e.target.value });
+    });
+  }
 
   // Gérer les changements de couleur
   document.getElementById('color-gisement').addEventListener('input', function() {

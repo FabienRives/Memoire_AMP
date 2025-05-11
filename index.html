@@ -23,32 +23,41 @@
     <div id="menu">
       <h3>Couches disponibles</h3>
       <ul id="layer-list">
-        <!-- Gisement Foncier -->
-        <li class="menu-item" data-layer="gisement">
+        <!-- Communes AMP (activée au chargement) -->
+        <li class="menu-item" data-layer="communes">
           <span class="drag-handle"><i class="fas fa-grip-lines"></i></span>
-          <input type="checkbox" id="layer-gisement" checked>
-          <label for="layer-gisement">
-            <i class="fas fa-layer-group"></i> Gisement Foncier
+          <input type="checkbox" id="layer-communes" checked>
+          <label for="layer-communes">
+            <i class="fas fa-layer-group"></i> Communes AMP
           </label>
-          <input type="color" id="color-gisement" value="#ff7800" title="Couleur Gisement">
+          <input type="color" id="color-communes" value="#28a745" title="Couleur Communes">
         </li>
         <!-- EPCI AMP -->
         <li class="menu-item" data-layer="epci">
           <span class="drag-handle"><i class="fas fa-grip-lines"></i></span>
-          <input type="checkbox" id="layer-epci" checked>
+          <input type="checkbox" id="layer-epci">
           <label for="layer-epci">
             <i class="fas fa-layer-group"></i> EPCI AMP
           </label>
           <input type="color" id="color-epci" value="#0078ff" title="Couleur EPCI">
         </li>
-        <!-- Communes AMP (désactivée au chargement) -->
-        <li class="menu-item" data-layer="communes">
+        <!-- Gisement Foncier -->
+        <li class="menu-item" data-layer="gisement">
           <span class="drag-handle"><i class="fas fa-grip-lines"></i></span>
-          <input type="checkbox" id="layer-communes">
-          <label for="layer-communes">
-            <i class="fas fa-layer-group"></i> Communes AMP
+          <input type="checkbox" id="layer-gisement">
+          <label for="layer-gisement">
+            <i class="fas fa-layer-group"></i> Gisement Foncier
           </label>
-          <input type="color" id="color-communes" value="#28a745" title="Couleur Communes">
+          <input type="color" id="color-gisement" value="#ff7800" title="Couleur Gisement">
+        </li>
+        <!-- Propriétaires Moraux (diagramme secteur) -->
+        <li class="menu-item" data-layer="moraux">
+          <span class="drag-handle"><i class="fas fa-grip-lines"></i></span>
+          <input type="checkbox" id="layer-moraux">
+          <label for="layer-moraux">
+            <i class="fas fa-chart-pie"></i> Propriétaires Moraux
+          </label>
+          <input type="color" id="color-moraux" value="#4E79A7" title="Couleur Moraux">
         </li>
       </ul>
     </div>
@@ -57,7 +66,8 @@
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@turf/turf@6/turf.min.js"></script>
-  
+  <!-- Ajout de Chart.js pour les diagrammes secteur -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="script.js"></script>
 </body>
 </html>
