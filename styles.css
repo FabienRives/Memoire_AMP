@@ -1,75 +1,726 @@
-/* Global */
+/* Variables CSS globales */
+:root {
+  /* Palette de couleurs */
+  --primary: #0078ff;
+  --primary-light: #e9f4ff;
+  --primary-dark: #0055b3;
+  --secondary: #28a745;
+  --tertiary: #ff7800;
+  --dark: #343a40;
+  --dark-secondary: #495057;
+  --light: #f8f9fa;
+  --light-secondary: #e9ecef;
+  --border-light: rgba(255, 255, 255, 0.4);
+  --border-dark: rgba(0, 0, 0, 0.1);
+  --shadow: rgba(0, 0, 0, 0.2);
+  
+  /* Espacements */
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 16px;
+  --space-lg: 24px;
+  --space-xl: 32px;
+  
+  /* Arrondis */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 16px;
+  --radius-round: 50px;
+  
+  /* Animations */
+  --transition-fast: 0.2s ease;
+  --transition-normal: 0.3s ease;
+  --transition-slow: 0.5s ease;
+}
+
+/* Styles globaux */
 html, body {
   height: 100%;
   margin: 0; padding: 0;
-  font-family: 'Arial', sans-serif;
+  font-family: 'Inter', 'Segoe UI', 'Arial', sans-serif;
   overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  color: var(--dark);
+  background-color: var(--light);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Animation fondu */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* Style de scrollbar global */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--dark-secondary) transparent;
+}
+
+*::-webkit-scrollbar {
+  width: 6px;
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+  background-color: var(--dark-secondary);
+  border-radius: var(--radius-lg);
+}
+
+/* Sélection de texte */
+::selection {
+  background-color: var(--primary-light);
+  color: var(--primary-dark);
 }
 
 /* Overlay de chargement */
 #loading-overlay {
-  position: absolute;
+  position: fixed;
   top: 0; left: 0;
   width: 100%; height: 100%;
-  background: rgba(0,0,0,0.6);
-  color: white;
+  background: var(--dark);
+  color: var(--light);
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  z-index: 1000;
+  z-index: 2000;
   opacity: 1;
-  transition: opacity 0.5s ease;
+  transition: opacity var(--transition-slow);
+  backdrop-filter: blur(5px);
 }
+
 #loading-overlay.hidden {
   opacity: 0;
   pointer-events: none;
 }
 
-/* Spinner animé */
+/* Spinner animé moderne */
 .spinner {
-  border: 8px solid rgba(255,255,255,0.2);
-  border-top: 8px solid #ffffff;
-  border-radius: 50%;
-  width: 60px; height: 60px;
-  animation: spin 1s linear infinite;
-  margin-bottom: 15px;
+  position: relative;
+  width: 80px; 
+  height: 80px;
+  margin-bottom: var(--space-lg);
 }
-@keyframes spin {
-  to { transform: rotate(360deg); }
+
+.spinner:before,
+.spinner:after {
+  content: '';
+  position: absolute;
+  border-radius: 50%;
+  animation-duration: 1.8s;
+  animation-iteration-count: infinite;
+  animation-timing-function: ease-in-out;
+  filter: drop-shadow(0 0 10px rgba(0,120,255,0.5));
+}
+
+.spinner:before {
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 120, 255, 0.2);
+  animation-name: pulse;
+}
+
+.spinner:after {
+  width: 60%;
+  height: 60%;
+  background-color: var(--primary);
+  top: 20%;
+  left: 20%;
+  animation-name: pulse-inner;
+}
+
+@keyframes pulse {
+  0% { transform: scale(0.8); opacity: 0.8; }
+  50% { transform: scale(1); opacity: 1; }
+  100% { transform: scale(0.8); opacity: 0.8; }
+}
+
+@keyframes pulse-inner {
+  0% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(0.8); opacity: 0.8; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+#loading-overlay p {
+  font-size: 18px;
+  font-weight: 500;
+  letter-spacing: 1px;
+  animation: fadeIn 1s ease-in-out;
+  margin-top: 0;
+  color: var(--light);
+  text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+}
+
+/* Boîte de recherche sur la carte */
+#search-box {
+  position: absolute;
+  top: 22px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(255, 255, 255, 0.85);
+  color: #333;
+  padding: 12px 18px 14px 18px;
+  border-radius: 18px;
+  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.18), 0 2px 8px rgba(0,120,255,0.06);
+  z-index: 1000;
+  max-width: 480px;
+  width: 95%;
+  transition: all 0.35s cubic-bezier(.4,2.2,.2,1);
+  backdrop-filter: blur(10px) saturate(180%);
+  border: 1.5px solid rgba(0,120,255,0.09);
+  animation: fadeIn 0.7s;
+}
+
+#search-box.focused {
+  box-shadow: 0 8px 40px 0 rgba(0,120,255,0.18), 0 2px 8px rgba(0,120,255,0.12);
+  border: 2px solid var(--primary);
+  background: rgba(255,255,255,0.97);
+}
+
+#search-box:focus-within {
+  box-shadow: 0 8px 40px 0 rgba(0,120,255,0.22), 0 2px 8px rgba(0,120,255,0.15);
+  border: 2px solid var(--primary);
+  background: rgba(255,255,255,0.99);
+}
+
+
+#search-box:hover, #search-box:focus-within {
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.25);
+  transform: translateX(-50%) translateY(-1px);
+}
+
+#search-box.focused {
+  width: 95%;
+  max-width: 500px;
+}
+
+.search-container {
+  display: flex;
+  align-items: center;
+  font-size: 16px;
+  position: relative;
+  width: 100%;
+}
+
+.search-container i {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #495057;
+  font-size: 18px;
+  transition: color 0.3s ease;
+}
+
+#search-box:focus-within .search-container i {
+  color: #0078ff;
+}
+
+#commune-search {
+  width: 100%;
+  padding: 12px 15px 12px 40px;
+  border: 2px solid #e9ecef;
+  border-radius: 6px;
+  background: #fff;
+  color: #333;
+  font-size: 16px;
+  transition: all 0.3s ease;
+  outline: none;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05) inset;
+}
+
+#commune-search:focus {
+  border-color: #0078ff;
+  box-shadow: 0 1px 3px rgba(0, 120, 255, 0.2) inset;
+}
+
+#search-results {
+  position: absolute;
+  top: calc(100% + 5px);
+  left: 0;
+  right: 0;
+  max-height: 300px;
+  overflow-y: auto;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+  margin-top: 5px;
+  z-index: 1000;
+  display: none;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  padding: 5px 0;
+  scrollbar-width: thin;
+  scrollbar-color: #ddd #fff;
+}
+
+#search-results::-webkit-scrollbar {
+  width: 6px;
+}
+
+#search-results::-webkit-scrollbar-track {
+  background: #fff;
+  border-radius: 10px;
+}
+
+#search-results::-webkit-scrollbar-thumb {
+  background-color: #ddd;
+  border-radius: 10px;
+}
+
+#search-results div {
+  padding: 10px 15px;
+  cursor: pointer;
+  transition: all 0.2s;
+  border-left: 3px solid transparent;
+  font-size: 15px;
+  color: #495057;
+}
+
+#search-results div:hover {
+  background: #f8f9fa;
+  border-left-color: #0078ff;
+  color: #0078ff;
+}
+
+#search-results div.active {
+  background: #e9f4ff;
+  border-left-color: #0078ff;
+  color: #0078ff;
+  font-weight: 500;
+}
+
+#search-results div:not(:last-child) {
+  border-bottom: 1px solid #f2f2f2;
 }
 
 /* Layout carte + menu */
-#mapContainer { display: flex; width:100%; height:100%; }
-#menu {
-  width: 250px; height: 100%;
-  background: #343a40; color:white;
-  padding:20px; box-sizing:border-box;
-  overflow-y:auto; transition: width 0.3s ease;
+#mapContainer { 
+  display: flex; 
+  width: 100%; 
+  height: 100%; /* Utilise toute la hauteur */
+  position: relative; /* Pour le positionnement absolu de la barre de recherche */
 }
-#menu.collapsed { width:60px; }
+
+/* Style du menu latéral */
+#menu {
+  width: 400px; 
+  height: 100%;
+  background: var(--dark);
+  background-image: linear-gradient(to bottom, var(--dark), #2a2e33);
+  color: var(--light);
+  padding: var(--space-lg);
+  box-sizing: border-box;
+  overflow-y: auto; 
+  transition: all var(--transition-normal);
+  box-shadow: 2px 0 10px var(--shadow);
+  position: relative;
+  z-index: 10;
+}
+
+/* État réduit du menu */
+#menu.collapsed { 
+  width: 60px; 
+  padding: var(--space-lg) var(--space-sm);
+}
+
 #menu.collapsed h3,
 #menu.collapsed .menu-item label,
 #menu.collapsed .menu-item input[type="color"] {
   display: none;
 }
 
-#menu h3 { margin-bottom: 20px; }
-#layer-list { list-style:none; padding:0; margin:0; }
-.menu-item {
-  display:flex; align-items:center;
-  background:#495057; padding:10px;
-  margin-bottom:10px; border-radius:5px;
-  cursor: move; transition: background 0.2s;
-}
-.menu-item:hover { background:#6c757d; }
-.menu-item label { flex:1; margin-left:10px; }
-.drag-handle { color:rgba(255,255,255,0.6); cursor:grab; margin-right:10px; }
-.drag-handle:hover { color:white; }
-.menu-item input[type="color"] {
-  margin-left:10px; border:none;
-  width:30px; height:30px; padding:0;
-  cursor:pointer; background:none;
+/* Titres du menu */
+#menu h3 { 
+  margin-bottom: var(--space-md); 
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--light);
+  padding-bottom: var(--space-sm);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  font-size: 14px;
 }
 
-#map { flex:1; background:#f0f0f0; }
+/* Sélecteur de fond cartographique */
+#basemap-selector {
+  margin-bottom: var(--space-lg);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+#basemap-selector label {
+  display: flex;
+  align-items: center;
+  padding: var(--space-sm) var(--space-md);
+  background: var(--dark-secondary);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  border: 1px solid transparent;
+  position: relative;
+  overflow: hidden;
+}
+
+#basemap-selector label:hover {
+  background: rgba(255, 255, 255, 0.1);
+  transform: translateY(-1px);
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.15);
+}
+
+#basemap-selector input[type="radio"] {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 18px;
+  height: 18px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  margin-right: var(--space-sm);
+  position: relative;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+#basemap-selector input[type="radio"]:checked {
+  background: var(--primary);
+  border-color: var(--light);
+  box-shadow: 0 0 0 2px var(--primary-dark);
+}
+
+#basemap-selector input[type="radio"]:checked::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 6px;
+  height: 6px;
+  background: var(--light);
+  border-radius: 50%;
+}
+
+#basemap-selector i {
+  margin-right: var(--space-sm);
+  width: 18px;
+  text-align: center;
+  color: var(--light);
+  transition: all var(--transition-fast);
+}
+
+#basemap-selector label:hover i {
+  transform: scale(1.1);
+  color: var(--primary);
+}
+
+hr {
+  border: none;
+  height: 1px;
+  background: linear-gradient(to right, transparent, rgba(255,255,255,0.2), transparent);
+  margin: var(--space-md) 0;
+}
+
+/* Liste des couches */
+#layer-list { 
+  list-style: none; 
+  padding: 0; 
+  margin: 0; 
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.menu-item {
+  transition: none !important;
+
+  display: flex; 
+  align-items: center;
+  background: var(--dark-secondary); 
+  padding: var(--space-md);
+  border-radius: var(--radius-md);
+  cursor: move; 
+  transition: all var(--transition-fast);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  position: relative;
+  overflow: hidden;
+}
+
+.menu-item.dragging {
+  opacity: 0.85;
+  z-index: 1000;
+  box-shadow: 0 8px 24px rgba(0,120,255,0.18), 0 2px 8px rgba(0,120,255,0.12);
+  transform: scale(1.03);
+  will-change: transform;
+  transition: none !important;
+}
+
+
+.menu-item::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  width: 3px;
+  background: var(--primary);
+  transform: scaleY(0);
+  transition: transform var(--transition-fast);
+  transform-origin: top;
+}
+
+.menu-item:hover::before {
+  transform: scaleY(1);
+}
+
+.menu-item:hover { 
+  background: rgba(255, 255, 255, 0.1); 
+  transform: translateY(-1px);
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.15);
+}
+
+.menu-item label { 
+  flex: 1; 
+  margin-left: var(--space-sm); 
+  cursor: pointer;
+  font-weight: 500;
+  transition: color var(--transition-fast);
+}
+
+.menu-item:hover label {
+  color: var(--primary-light);
+}
+
+/* Style des cases à cocher */
+.menu-item input[type="checkbox"] {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 18px;
+  height: 18px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: var(--radius-sm);
+  position: relative;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.menu-item input[type="checkbox"]:checked {
+  background: var(--secondary);
+  border-color: var(--light);
+}
+
+.menu-item input[type="checkbox"]:checked::before {
+  content: '\2713';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: var(--light);
+  font-size: 12px;
+  font-weight: bold;
+}
+
+.drag-handle { 
+  color: rgba(255, 255, 255, 0.6); 
+  cursor: grab; 
+  margin-right: var(--space-sm); 
+  transition: all var(--transition-fast);
+}
+
+.drag-handle:hover { 
+  color: var(--light);
+  transform: scale(1.1);
+}
+
+.menu-item input[type="color"] {
+  margin-left: var(--space-sm); 
+  border: none;
+  width: 24px; 
+  height: 24px; 
+  padding: 0;
+  cursor: pointer; 
+  background: none;
+  border-radius: var(--radius-sm);
+  transition: all var(--transition-fast);
+  border: 2px solid rgba(255, 255, 255, 0.3);
+}
+
+.menu-item input[type="color"]:hover {
+  transform: scale(1.1);
+  border-color: var(--light);
+}
+
+/* Carte principale */
+#map { 
+  flex: 1; 
+  background: var(--light-secondary);
+  position: relative;
+  outline: none;
+  box-shadow: inset 0 0 20px rgba(0,0,0,0.05);
+}
+
+
+
+/* Style des popups Leaflet */
+.leaflet-popup-content-wrapper {
+  border-radius: var(--radius-md);
+  box-shadow: 0 3px 15px var(--shadow);
+  padding: 0;
+  overflow: hidden;
+}
+
+.leaflet-popup-content {
+  margin: 0;
+  width: 300px !important;
+  max-width: 100%;
+}
+
+.popup {
+  font-family: 'Inter', 'Segoe UI', 'Arial', sans-serif;
+}
+
+/* Styles généraux pour toutes les popups */
+.leaflet-popup-content {
+  margin: 0 !important;
+  padding: 0 !important;
+  width: auto !important;
+}
+
+/* Styles pour les popups avec buffer blanc */
+.leaflet-popup-content-wrapper {
+  padding: 0 !important;
+  overflow: visible !important;
+  width: auto !important;
+  box-sizing: border-box !important;
+  border: 6px solid white !important; /* Ajout du buffer blanc */
+  min-width: 450px !important;
+  max-width: 550px !important;
+}
+
+/* Taille des popups avec diagrammes */
+.leaflet-popup-content {
+  min-width: 450px !important;
+  max-width: 550px !important;
+}
+
+/* Titre long pour la répartition de surface */
+.popup h4 + table + div + div {
+  font-size: 13px;
+}
+
+/* Canvas du diagramme */
+.popup canvas {
+  max-width: 100%;
+  height: auto !important;
+  display: block;
+  margin: 0 auto;
+}
+
+.popup h4 {
+  margin: 0;
+  padding: var(--space-md);
+  background: var(--primary);
+  color: white;
+  font-size: 16px;
+  font-weight: 600;
+  border-bottom: 1px solid var(--primary-dark);
+}
+
+.popup table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.popup table tr:nth-child(odd) {
+  background-color: rgba(0,0,0,0.02);
+}
+
+.popup table th {
+  padding: var(--space-sm);
+  text-align: left;
+  font-weight: 600;
+  border-right: 1px solid var(--light-secondary);
+  width: 40%;
+  color: var(--dark);
+}
+
+.popup table td {
+  padding: var(--space-sm);
+  color: var(--dark-secondary);
+}
+
+.popup p {
+  margin: var(--space-sm);
+  padding: var(--space-sm);
+  color: var(--dark-secondary);
+  font-size: 14px;
+}
+
+.leaflet-popup-tip {
+  background: var(--primary);
+}
+
+.leaflet-container a.leaflet-popup-close-button {
+  color: white;
+  right: 10px;
+  top: 10px;
+  font-weight: normal;
+  padding: 3px;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: rgba(0,0,0,0.2);
+  transition: all var(--transition-fast);
+}
+
+.leaflet-container a.leaflet-popup-close-button:hover {
+  background: rgba(0,0,0,0.4);
+  color: white;
+  text-decoration: none;
+}
+
+/* Bouton pour masquer/afficher le menu */
+.toggle-button {
+  position: absolute;
+  top: var(--space-md);
+  left: 420px; /* Juste après le menu */
+  z-index: 11;
+  background: var(--primary);
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  cursor: pointer;
+  box-shadow: 0 2px 6px var(--shadow);
+  transition: all var(--transition-normal);
+}
+
+.toggle-button:hover {
+  background: var(--primary-dark);
+  transform: translateX(3px);
+}
+
+.menu.collapsed + .toggle-button {
+  left: 70px;
+}
+
+.menu.collapsed + .toggle-button:hover {
+  transform: translateX(-3px);
+}

@@ -20,7 +20,21 @@
   </div>
 
   <div id="mapContainer">
+    
     <div id="menu">
+      <h3>Fond cartographique</h3>
+      <div id="basemap-selector">
+        <label>
+          <input type="radio" name="basemap" value="osm" checked> 
+          <i class="fas fa-map"></i> Carte standard (OpenStreetMap)
+        </label>
+
+        <label>
+          <input type="radio" name="basemap" value="satellite"> 
+          <i class="fas fa-satellite"></i> Vue satellite (Esri)
+        </label>
+      </div>
+      <hr>
       <h3>Couches disponibles</h3>
       <ul id="layer-list">
         <!-- Communes AMP (activée au chargement) -->
@@ -57,11 +71,20 @@
           <label for="layer-moraux">
             <i class="fas fa-chart-pie"></i> Propriétaires Moraux
           </label>
-          <input type="color" id="color-moraux" value="#4E79A7" title="Couleur Moraux">
+          <input type="color" id="color-moraux" value="#000000" title="Couleur Moraux">
         </li>
       </ul>
     </div>
-    <div id="map"></div>
+    <div id="map">
+      <!-- Barre de recherche sur la carte -->
+      <div id="search-box">
+        <div class="search-container">
+          <i class="fas fa-search"></i>
+          <input type="text" id="commune-search" placeholder="Rechercher une commune dans la métropole..." autocomplete="off">
+          <div id="search-results"></div>
+        </div>
+      </div>
+    </div>
   </div>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>

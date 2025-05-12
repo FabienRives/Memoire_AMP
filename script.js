@@ -1,11 +1,40 @@
 document.addEventListener('DOMContentLoaded', function () {
   const overlay = document.getElementById('loading-overlay');
   const map = L.map('map', { center: [43.3, 5.4], zoom: 10 }); // Centré sur Marseille
+  
+  // Liste des communes et leurs géométries
+  let communesList = [];
 
-  // Fond de carte OSM
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '&copy; OpenStreetMap contributors',
-  }).addTo(map);
+  // Définition des fonds de carte
+  const basemaps = {
+    osm: L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; OpenStreetMap contributors'
+    }),
+    topo: L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; OpenStreetMap contributors, SRTM | Style: &copy; OpenTopoMap (CC-BY-SA)'
+    }),
+    satellite: L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+      attribution: '&copy; Esri, Maxar, Earthstar Geographics, and the GIS User Community'
+    })
+  };
+
+  // Ajout du fond de carte OpenStreetMap par défaut
+  basemaps.osm.addTo(map);
+  
+  // Gestionnaire d'événements pour les boutons radio de fond de carte
+  document.querySelectorAll('input[name="basemap"]').forEach(input => {
+    input.addEventListener('change', function() {
+      // Suppression de tous les fonds de carte
+      Object.values(basemaps).forEach(layer => {
+        if (map.hasLayer(layer)) {
+          map.removeLayer(layer);
+        }
+      });
+      
+      // Ajout du fond de carte sélectionné
+      basemaps[this.value].addTo(map);
+    });
+  });
 
   // Fonction réutilisable pour ajouter des popups à n'importe quelle couche
   function addPopupToLayer(layer) {
@@ -76,7 +105,7 @@ document.addEventListener('DOMContentLoaded', function () {
       }
     }),
     moraux: L.geoJSON(null, {
-      style: { color: '#4E79A7', weight: 2 },
+      style: { color: '#000000', weight: 2 },
       onEachFeature: function(feature, layer) {
         if (feature.properties) {
           // Champs et couleurs pour le diagramme secteur
@@ -157,7 +186,7 @@ document.addEventListener('DOMContentLoaded', function () {
             content += `<tr><th>INSEE_COM</th><td>${feature.properties.INSEE_COM}</td></tr>`;
           }
           content += '</table>';
-          content += `<div style=\"margin-top:10px;text-align:center\"><canvas id=\"${canvasId}\" width=\"400\" height=\"400\"></canvas></div>`;
+          content += `<div style=\"margin-top:10px;text-align:center\"><canvas id=\"${canvasId}\" width=\"450\" height=\"350\"></canvas></div>`;
           content += `<div style=\"text-align:center;margin-top:8px;\"><button id=\"open-diag-${canvasId}\" style=\"margin:0 auto;display:inline-block;padding:6px 16px;font-size:15px;cursor:pointer;\">Ouvrir le diagramme dans une nouvelle fenêtre</button></div>`;
           content += '</div>';
           layer.bindPopup(content, {
@@ -279,20 +308,311 @@ document.addEventListener('DOMContentLoaded', function () {
     console.log(`%c${title}`, 'background: #222; color: #bada55; padding: 3px;', ...args);
   }
 
+  // Fonction de recherche de communes
+  function setupCommuneSearch() {
+    const searchInput = document.getElementById('commune-search');
+    const searchResults = document.getElementById('search-results');
+    const searchBox = document.getElementById('search-box');
+    let debounceTimer;
+
+    // Animation lors du focus sur le champ de recherche
+    searchInput.addEventListener('focus', function() {
+      searchBox.classList.add('focused');
+      if (this.value.trim().length >= 2) {
+        updateSearchResults(this.value.trim());
+      }
+    });
+
+    // Filtrer les communes avec debounce pour améliorer les performances
+    searchInput.addEventListener('input', function() {
+      const searchText = this.value.trim();
+      
+      // Effacer le timer existant
+      clearTimeout(debounceTimer);
+      
+      if (searchText.length < 2) {
+        searchResults.style.display = 'none';
+        return;
+      }
+      
+      // Attendez un court délai avant de mettre à jour les résultats (debounce)
+      debounceTimer = setTimeout(() => {
+        updateSearchResults(searchText);
+      }, 150);
+    });
+    
+    // Fonction pour mettre à jour les résultats de recherche
+    function updateSearchResults(searchText) {
+      const searchLower = searchText.toLowerCase();
+      
+      // Tri des communes : d'abord les correspondances exactes au début, puis triées par ordre alphabétique
+      const exactMatches = [];
+      const partialMatches = [];
+      
+      communesList.forEach(commune => {
+        const nom = commune.nom.toLowerCase();
+        if (nom === searchLower) {
+          exactMatches.push(commune);
+        } else if (nom.includes(searchLower)) {
+          partialMatches.push(commune);
+        }
+      });
+      
+      // Combiner et limiter les résultats
+      const matches = [...exactMatches, ...partialMatches].slice(0, 10);
+      
+      // Afficher les résultats
+      searchResults.innerHTML = '';
+      if (matches.length > 0) {
+        matches.forEach(commune => {
+          const div = document.createElement('div');
+          
+          // Mettre en surbrillance la partie correspondante
+          const nomLower = commune.nom.toLowerCase();
+          const index = nomLower.indexOf(searchLower);
+          if (index >= 0) {
+            const before = commune.nom.substring(0, index);
+            const match = commune.nom.substring(index, index + searchLower.length);
+            const after = commune.nom.substring(index + searchLower.length);
+            div.innerHTML = `${before}<strong>${match}</strong>${after}`;
+          } else {
+            div.textContent = commune.nom;
+          }
+          
+          div.addEventListener('click', function() {
+            // Zoom sur la commune sélectionnée avec une animation fluide
+            if (commune.bounds) {
+              map.flyToBounds(commune.bounds, {
+                padding: [50, 50],
+                duration: 1.5
+              });
+            }
+            searchInput.value = commune.nom;
+            searchResults.style.display = 'none';
+            searchInput.blur(); // Retirer le focus du champ de recherche
+          });
+          searchResults.appendChild(div);
+        });
+        searchResults.style.display = 'block';
+      } else {
+        // Afficher un message si aucun résultat n'est trouvé
+        const noResult = document.createElement('div');
+        noResult.textContent = 'Aucune commune trouvée';
+        noResult.className = 'no-results';
+        searchResults.appendChild(noResult);
+        searchResults.style.display = 'block';
+      }
+    }
+    
+    // Cacher les résultats quand on clique en dehors
+    document.addEventListener('click', function(e) {
+      if (!searchInput.contains(e.target) && !searchResults.contains(e.target)) {
+        searchResults.style.display = 'none';
+        searchBox.classList.remove('focused');
+      }
+    });
+    
+    // Placer le curseur à la fin du texte lors du focus
+    searchInput.addEventListener('focus', function() {
+      const length = this.value.length;
+      this.setSelectionRange(length, length);
+    });
+    
+    // Navigation au clavier améliorée
+    searchInput.addEventListener('keydown', function(e) {
+      if (searchResults.style.display === 'block') {
+        const items = searchResults.querySelectorAll('div:not(.no-results)');
+        if (items.length === 0) return;
+        
+        let activeItem = searchResults.querySelector('.active');
+        let activeIndex = -1;
+        
+        if (activeItem) {
+          activeIndex = Array.from(items).indexOf(activeItem);
+        }
+        
+        // Touche flèche bas
+        if (e.key === 'ArrowDown') {
+          e.preventDefault();
+          if (activeItem) activeItem.classList.remove('active');
+          activeIndex = (activeIndex + 1) % items.length;
+          items[activeIndex].classList.add('active');
+          items[activeIndex].scrollIntoView({block: 'nearest', behavior: 'smooth'});
+        }
+        
+        // Touche flèche haut
+        else if (e.key === 'ArrowUp') {
+          e.preventDefault();
+          if (activeItem) activeItem.classList.remove('active');
+          activeIndex = (activeIndex - 1 + items.length) % items.length;
+          items[activeIndex].classList.add('active');
+          items[activeIndex].scrollIntoView({block: 'nearest', behavior: 'smooth'});
+        }
+        
+        // Touche Entrée
+        else if (e.key === 'Enter') {
+          e.preventDefault();
+          if (activeItem) {
+            activeItem.click();
+          } else if (items.length > 0) {
+            items[0].click();
+          }
+        }
+        
+        // Touche Echap
+        else if (e.key === 'Escape') {
+          searchResults.style.display = 'none';
+          searchBox.classList.remove('focused');
+          searchInput.blur();
+        }
+      }
+    });
+  }
+
+  // Standardiser toutes les popups pour avoir un style cohérent
+  function standardizeAllPopups() {
+    // On ne modifie que les couches standard, pas celle des moraux qui a des diagrammes spécifiques
+    // et pas les clusters qui ont une structure différente
+    const standardLayers = ['epci', 'communes', 'gisement'];
+    
+    for (const layerName of standardLayers) {
+      if (layers[layerName] && layers[layerName] instanceof L.GeoJSON) {
+        const layer = layers[layerName];
+        
+        // Conserver la référence à la fonction originale si elle existe
+        const originalOnEachFeature = layer.options.onEachFeature;
+        
+        // Définir la nouvelle fonction qui ajoute juste le style de la popup
+        layer.options.onEachFeature = function(feature, layer) {
+          if (feature.properties) {
+            // Créer le contenu HTML uniforme
+            let content = '<div class="popup">';
+            
+            // Ajouter un titre si disponible
+            const name = feature.properties.nom || feature.properties.name || 
+                      feature.properties.NOM || feature.properties.NAME || 
+                      feature.properties.NOM_M;
+            
+            if (name) {
+              content += `<h4>${name}</h4>`;
+            } else if (layerName) {
+              // Utiliser le nom de la couche si pas de nom dans les propriétés
+              content += `<h4>${layerName.charAt(0).toUpperCase() + layerName.slice(1)}</h4>`;
+            }
+            
+            // Ajouter toutes les propriétés dans un tableau
+            content += '<table>';
+            for (const prop in feature.properties) {
+              // Ignorer les propriétés techniques
+              if (!prop.startsWith('_') && prop !== 'centroid') {
+                content += `<tr><th>${prop}</th><td>${feature.properties[prop]}</td></tr>`;
+              }
+            }
+            content += '</table></div>';
+            
+            // Ajouter la popup
+            layer.bindPopup(content, {
+              maxHeight: 300,
+              maxWidth: 300
+            });
+          }
+        };
+        
+        // Réappliquer onEachFeature à toutes les features existantes
+        if (layer.getLayers && layer.getLayers().length > 0) {
+          layer.getLayers().forEach(l => {
+            if (l.feature && l.feature.properties) {
+              layer.options.onEachFeature(l.feature, l);
+            }
+          });
+        }
+      }
+    }
+    
+    // Standardiser les popups pour les clusters standards uniquement
+    if (window.clustersLayer && window.clustersLayer.getLayers) {
+      window.clustersLayer.getLayers().forEach(circle => {
+        if (!circle._customDiagram) { // Ne modifie pas les cercles avec des diagrammes personnalisés
+          circle.off('click');
+          circle.on('click', function() {
+            const count = circle.count || 'plusieurs';
+            const popupContent = `
+              <div class="popup">
+                <h4>Groupe d'entités</h4>
+                <table>
+                  <tr><th>Nombre d'entités</th><td>${count}</td></tr>
+                  <tr><th>Action</th><td>Zoomez davantage pour voir les entités individuelles</td></tr>
+                </table>
+              </div>
+            `;
+            
+            L.popup({ maxHeight: 300, maxWidth: 300 })
+              .setLatLng(circle.getLatLng())
+              .setContent(popupContent)
+              .openOn(map);
+          });
+        }
+      });
+    }
+    
+    console.log('Popups standardisées pour les couches de base');
+  }
+  
   // Chargement des données GeoJSON
   const p1 = fetch('GisementFoncier.geojson')
   .then(r => r.json())
   .then(data => {
-    log('GeoJSON gisement chargé', `${data.features.length} entités`);
     gisementData = data;
-  });
-  const p2 = fetch('EPCI_AMP.geojson')
-    .then(r => r.json()).then(data => layers.epci.addData(data));
-  const p3 = fetch('Communes_AMP.geojson')
-    .then(r => r.json()).then(data => layers.communes.addData(data));
-  const p4 = fetch('ComPourcPropMoraux.geojson')
-    .then(r => r.json()).then(data => layers.moraux.addData(data));
+    log('GisementFoncier chargé:', data.features.length, 'features');
+    return 'OK';
+  })
+  .catch(err => log('Erreur chargement GisementFoncier:', err));
+  
+  // Chargement du fichier des communes
+  const p2 = fetch('Communes_AMP.geojson')
+  .then(r => r.json())
+  .then(data => {
+    log('Communes_AMP chargé:', data.features.length, 'communes');
+    
+    // Ajouter les données à la couche des communes
+    layers.communes.addData(data);
+    
+    // Extraire et stocker les noms et géométries des communes
+    data.features.forEach(feature => {
+      if (feature.properties && feature.properties.NOM_M) {
+        // Calculer les limites (bounds) de la commune pour le zoom
+        const layer = L.geoJSON(feature);
+        const bounds = layer.getBounds();
+        
+        communesList.push({
+          nom: feature.properties.NOM_M,
+          bounds: bounds,
+          feature: feature
+        });
+      }
+    });
+    
+    // Trier les communes par ordre alphabétique
+    communesList.sort((a, b) => a.nom.localeCompare(b.nom));
+    log('Liste des communes créée:', communesList.length, 'communes');
+    
+    // Initialiser la recherche de communes
+    setupCommuneSearch();
+    
+    return 'OK';
+  })
+  .catch(err => log('Erreur chargement Communes_AMP:', err));
 
+  // Chargement des autres couches
+  const p3 = fetch('EPCI_AMP.geojson')
+    .then(r => r.json())
+    .then(data => layers.epci.addData(data));
+
+  const p4 = fetch('ComPourcPropMoraux.geojson')
+    .then(r => r.json())
+    .then(data => layers.moraux.addData(data));
+
+  // On attend que toutes les données soient chargées
   Promise.all([p1, p2, p3, p4]).then(() => {
     // Calculer les centroïdes des features pour optimiser les performances
     function calculateCentroids() {
@@ -469,7 +789,7 @@ document.addEventListener('DOMContentLoaded', function () {
               </div>
             `;
             
-            L.popup()
+            L.popup({ maxHeight: 300, maxWidth: 300 })
               .setLatLng(position)
               .setContent(popupContent)
               .openOn(map);
@@ -567,12 +887,20 @@ document.addEventListener('DOMContentLoaded', function () {
     // fitBounds sans déclencher updateGisementLayer
     listenersActive = false;
     map.fitBounds(allBounds);
-    setTimeout(() => { listenersActive = true; }, 500); // active après l'animation fitBounds
-
-
-    // Masquer l’overlay en douceur
-    overlay.classList.add('hidden');
-    setTimeout(() => overlay.style.display = 'none', 500);
+    
+    // Activer à nouveau les écouteurs d'événements et terminer l'initialisation
+    setTimeout(() => {
+      listenersActive = true;
+      
+      // Standardiser toutes les popups une fois que toutes les couches sont chargées
+      standardizeAllPopups();
+      
+      // Masquer l'overlay de chargement
+      overlay.classList.add('hidden');
+      setTimeout(() => overlay.style.display = 'none', 500);
+      
+      log('Application chargée', 'Toutes les données ont été chargées avec succès');
+    }, 500);
     
     // Ajouter des styles CSS pour les popups
     const style = document.createElement('style');
@@ -662,6 +990,15 @@ document.addEventListener('DOMContentLoaded', function () {
   // Rendre la liste triable et gérer l'ordre z-index
   $('#layer-list').sortable({
     handle: '.drag-handle',
+    helper: 'clone',
+    scroll: false,
+    animation: 0,
+    start: function(e, ui) {
+      ui.item.addClass('dragging');
+    },
+    stop: function(e, ui) {
+      ui.item.removeClass('dragging');
+    },
     update() {
       const order = $(this).sortable('toArray', { attribute: 'data-layer' }).reverse();
       order.forEach(name => {
