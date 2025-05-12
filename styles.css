@@ -612,6 +612,10 @@ hr {
 }
 
 /* Titre long pour la répartition de surface */
+.popup h4 {
+  color: #FFFFFF !important;
+}
+
 .popup h4 + table + div + div {
   font-size: 13px;
 }
