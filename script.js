@@ -868,7 +868,7 @@ document.addEventListener('DOMContentLoaded', function () {
       updateGisementLayer();
     }
 
-    // Ajuste l’emprise sur toutes les couches chargées (en utilisant les données brutes pour gisement)
+    // Ajuste l'emprise sur toutes les couches chargées (en utilisant les données brutes pour gisement)
     let allBounds = layers.epci.getBounds().extend(layers.communes.getBounds());
     if (gisementData && gisementData.features.length > 0) {
       let gisementBounds = L.geoJSON(gisementData).getBounds();
@@ -1007,14 +1007,5 @@ document.addEventListener('DOMContentLoaded', function () {
         }
       });
     }
-  });
-
-  // Bouton pour réduire/agrandir le menu
-  const btn = document.createElement('button');
-  btn.className = 'toggle-button';
-  btn.innerHTML = '<i class="fas fa-bars"></i>';
-  document.body.appendChild(btn);
-  btn.addEventListener('click', () => {
-    document.getElementById('menu').classList.toggle('collapsed');
   });
 });

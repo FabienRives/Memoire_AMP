@@ -19,69 +19,77 @@
     <p>Chargement en cours...</p>
   </div>
 
-  <div id="mapContainer">
-    
-    <div id="menu">
-      <h3>Fond cartographique</h3>
-      <div id="basemap-selector">
-        <label>
-          <input type="radio" name="basemap" value="osm" checked> 
-          <i class="fas fa-map"></i> Carte standard (OpenStreetMap)
-        </label>
+  <!-- Conteneur global -->
+  <div id="appContainer">
+    <!-- Structure modifiée - Menu latéral déplacé avant la barre de recherche -->
+    <div id="mapContainer">
+      <div id="menu">
+        <h3>Fond cartographique</h3>
+        <div id="basemap-selector">
+          <label>
+            <input type="radio" name="basemap" value="osm" checked> 
+            <i class="fas fa-map"></i> Carte standard (OpenStreetMap)
+          </label>
 
-        <label>
-          <input type="radio" name="basemap" value="satellite"> 
-          <i class="fas fa-satellite"></i> Vue satellite (Esri)
-        </label>
+          <label>
+            <input type="radio" name="basemap" value="satellite"> 
+            <i class="fas fa-satellite"></i> Vue satellite (Esri)
+          </label>
+        </div>
+        <hr>
+        <h3>Couches disponibles</h3>
+        <ul id="layer-list">
+          <!-- Communes AMP (activée au chargement) -->
+          <li class="menu-item" data-layer="communes">
+            <span class="drag-handle"><i class="fas fa-grip-lines"></i></span>
+            <input type="checkbox" id="layer-communes" checked>
+            <label for="layer-communes">
+              <i class="fas fa-layer-group"></i> Communes AMP
+            </label>
+            <input type="color" id="color-communes" value="#28a745" title="Couleur Communes">
+          </li>
+          <!-- EPCI AMP -->
+          <li class="menu-item" data-layer="epci">
+            <span class="drag-handle"><i class="fas fa-grip-lines"></i></span>
+            <input type="checkbox" id="layer-epci">
+            <label for="layer-epci">
+              <i class="fas fa-layer-group"></i> EPCI AMP
+            </label>
+            <input type="color" id="color-epci" value="#0078ff" title="Couleur EPCI">
+          </li>
+          <!-- Gisement Foncier -->
+          <li class="menu-item" data-layer="gisement">
+            <span class="drag-handle"><i class="fas fa-grip-lines"></i></span>
+            <input type="checkbox" id="layer-gisement">
+            <label for="layer-gisement">
+              <i class="fas fa-layer-group"></i> Gisement Foncier
+            </label>
+            <input type="color" id="color-gisement" value="#ff7800" title="Couleur Gisement">
+          </li>
+          <!-- Propriétaires Moraux (diagramme secteur) -->
+          <li class="menu-item" data-layer="moraux">
+            <span class="drag-handle"><i class="fas fa-grip-lines"></i></span>
+            <input type="checkbox" id="layer-moraux">
+            <label for="layer-moraux">
+              <i class="fas fa-chart-pie"></i> Propriétaires Moraux
+            </label>
+            <input type="color" id="color-moraux" value="#000000" title="Couleur Moraux">
+          </li>
+        </ul>
       </div>
-      <hr>
-      <h3>Couches disponibles</h3>
-      <ul id="layer-list">
-        <!-- Communes AMP (activée au chargement) -->
-        <li class="menu-item" data-layer="communes">
-          <span class="drag-handle"><i class="fas fa-grip-lines"></i></span>
-          <input type="checkbox" id="layer-communes" checked>
-          <label for="layer-communes">
-            <i class="fas fa-layer-group"></i> Communes AMP
-          </label>
-          <input type="color" id="color-communes" value="#28a745" title="Couleur Communes">
-        </li>
-        <!-- EPCI AMP -->
-        <li class="menu-item" data-layer="epci">
-          <span class="drag-handle"><i class="fas fa-grip-lines"></i></span>
-          <input type="checkbox" id="layer-epci">
-          <label for="layer-epci">
-            <i class="fas fa-layer-group"></i> EPCI AMP
-          </label>
-          <input type="color" id="color-epci" value="#0078ff" title="Couleur EPCI">
-        </li>
-        <!-- Gisement Foncier -->
-        <li class="menu-item" data-layer="gisement">
-          <span class="drag-handle"><i class="fas fa-grip-lines"></i></span>
-          <input type="checkbox" id="layer-gisement">
-          <label for="layer-gisement">
-            <i class="fas fa-layer-group"></i> Gisement Foncier
-          </label>
-          <input type="color" id="color-gisement" value="#ff7800" title="Couleur Gisement">
-        </li>
-        <!-- Propriétaires Moraux (diagramme secteur) -->
-        <li class="menu-item" data-layer="moraux">
-          <span class="drag-handle"><i class="fas fa-grip-lines"></i></span>
-          <input type="checkbox" id="layer-moraux">
-          <label for="layer-moraux">
-            <i class="fas fa-chart-pie"></i> Propriétaires Moraux
-          </label>
-          <input type="color" id="color-moraux" value="#000000" title="Couleur Moraux">
-        </li>
-      </ul>
-    </div>
-    <div id="map">
-      <!-- Barre de recherche sur la carte -->
-      <div id="search-box">
-        <div class="search-container">
-          <i class="fas fa-search"></i>
-          <input type="text" id="commune-search" placeholder="Rechercher une commune dans la métropole..." autocomplete="off">
-          <div id="search-results"></div>
+      <div id="content-container">
+        <!-- Barre de recherche au-dessus de la carte mais calée sur sa largeur -->
+        <div id="search-container-wrapper">
+          <div id="search-box">
+            <div class="search-container">
+              <i class="fas fa-search"></i>
+              <input type="text" id="commune-search" placeholder="Rechercher une commune dans la métropole..." autocomplete="off">
+              <div id="search-results"></div>
+            </div>
+          </div>
+        </div>
+        <div id="map">
+          <!-- La carte sera ici -->
         </div>
       </div>
     </div>

@@ -157,154 +157,19 @@ html, body {
   text-shadow: 0 2px 4px rgba(0,0,0,0.3);
 }
 
-/* Boîte de recherche sur la carte */
-#search-box {
-  position: absolute;
-  top: 22px;
-  left: 50%;
-  transform: translateX(-50%);
-  background: rgba(255, 255, 255, 0.85);
-  color: #333;
-  padding: 12px 18px 14px 18px;
-  border-radius: 18px;
-  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.18), 0 2px 8px rgba(0,120,255,0.06);
-  z-index: 1000;
-  max-width: 480px;
-  width: 95%;
-  transition: all 0.35s cubic-bezier(.4,2.2,.2,1);
-  backdrop-filter: blur(10px) saturate(180%);
-  border: 1.5px solid rgba(0,120,255,0.09);
-  animation: fadeIn 0.7s;
-}
-
-#search-box.focused {
-  box-shadow: 0 8px 40px 0 rgba(0,120,255,0.18), 0 2px 8px rgba(0,120,255,0.12);
-  border: 2px solid var(--primary);
-  background: rgba(255,255,255,0.97);
-}
-
-#search-box:focus-within {
-  box-shadow: 0 8px 40px 0 rgba(0,120,255,0.22), 0 2px 8px rgba(0,120,255,0.15);
-  border: 2px solid var(--primary);
-  background: rgba(255,255,255,0.99);
-}
-
-
-#search-box:hover, #search-box:focus-within {
-  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.25);
-  transform: translateX(-50%) translateY(-1px);
-}
-
-#search-box.focused {
-  width: 95%;
-  max-width: 500px;
-}
-
-.search-container {
+/* Ajout d'un conteneur global pour l'application */
+#appContainer {
   display: flex;
-  align-items: center;
-  font-size: 16px;
-  position: relative;
+  height: 100%;
   width: 100%;
-}
-
-.search-container i {
-  position: absolute;
-  left: 12px;
-  top: 50%;
-  transform: translateY(-50%);
-  color: #495057;
-  font-size: 18px;
-  transition: color 0.3s ease;
-}
-
-#search-box:focus-within .search-container i {
-  color: #0078ff;
-}
-
-#commune-search {
-  width: 100%;
-  padding: 12px 15px 12px 40px;
-  border: 2px solid #e9ecef;
-  border-radius: 6px;
-  background: #fff;
-  color: #333;
-  font-size: 16px;
-  transition: all 0.3s ease;
-  outline: none;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05) inset;
-}
-
-#commune-search:focus {
-  border-color: #0078ff;
-  box-shadow: 0 1px 3px rgba(0, 120, 255, 0.2) inset;
-}
-
-#search-results {
-  position: absolute;
-  top: calc(100% + 5px);
-  left: 0;
-  right: 0;
-  max-height: 300px;
-  overflow-y: auto;
-  background: white;
-  border-radius: 8px;
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
-  margin-top: 5px;
-  z-index: 1000;
-  display: none;
-  border: 1px solid rgba(0, 0, 0, 0.08);
-  padding: 5px 0;
-  scrollbar-width: thin;
-  scrollbar-color: #ddd #fff;
-}
-
-#search-results::-webkit-scrollbar {
-  width: 6px;
-}
-
-#search-results::-webkit-scrollbar-track {
-  background: #fff;
-  border-radius: 10px;
-}
-
-#search-results::-webkit-scrollbar-thumb {
-  background-color: #ddd;
-  border-radius: 10px;
-}
-
-#search-results div {
-  padding: 10px 15px;
-  cursor: pointer;
-  transition: all 0.2s;
-  border-left: 3px solid transparent;
-  font-size: 15px;
-  color: #495057;
-}
-
-#search-results div:hover {
-  background: #f8f9fa;
-  border-left-color: #0078ff;
-  color: #0078ff;
-}
-
-#search-results div.active {
-  background: #e9f4ff;
-  border-left-color: #0078ff;
-  color: #0078ff;
-  font-weight: 500;
-}
-
-#search-results div:not(:last-child) {
-  border-bottom: 1px solid #f2f2f2;
 }
 
 /* Layout carte + menu */
 #mapContainer { 
   display: flex; 
   width: 100%; 
-  height: 100%; /* Utilise toute la hauteur */
-  position: relative; /* Pour le positionnement absolu de la barre de recherche */
+  height: 100%;
+  position: relative;
 }
 
 /* Style du menu latéral */
@@ -323,16 +188,126 @@ html, body {
   z-index: 10;
 }
 
-/* État réduit du menu */
-#menu.collapsed { 
-  width: 60px; 
-  padding: var(--space-lg) var(--space-sm);
+/* Nouveau conteneur pour la carte et la barre de recherche */
+#content-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
 }
 
-#menu.collapsed h3,
-#menu.collapsed .menu-item label,
-#menu.collapsed .menu-item input[type="color"] {
+/* Conteneur pour positionner la barre de recherche */
+#search-container-wrapper {
+  position: relative;
+  height: 60px;
+  display: flex;
+  width: 100%; 
+  z-index: 100;
+  background-color: var(--dark);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  padding-bottom: 10px;
+}
+
+/* Boîte de recherche - style simplifié et plus intégré */
+#search-box {
+  position: absolute;
+  top: 10px;
+  left: 20px; /* Marge depuis la gauche du conteneur */
+  background: none;
+  color: var(--light);
+  padding: 0;
+  z-index: 1000;
+  max-width: 400px;
+  width: calc(100% - 40px); /* Ajustement pour les marges */
+  transition: all 0.2s ease;
+  margin: 0;
+  border: none;
+  box-shadow: none;
+}
+
+/* Simplification des états de focus et hover */
+#search-box.focused, #search-box:focus-within, #search-box:hover {
+  box-shadow: none; /* Suppression des ombres */
+  border: none; /* Suppression des bordures */
+  background: none; /* Suppression du fond */
+}
+
+.search-container {
+  display: flex;
+  align-items: center;
+  position: relative;
+  width: 100%;
+}
+
+.search-container i {
+  position: absolute;
+  left: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 16px;
+  transition: color 0.2s ease;
+}
+
+#search-box:focus-within .search-container i {
+  color: var(--primary); /* Utilisation de la couleur primaire pour un meilleur contraste */
+}
+
+#commune-search {
+  width: 100%;
+  padding: 8px 12px 8px 35px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.05);
+  color: white;
+  font-size: 14px;
+  transition: all 0.2s ease;
+  outline: none;
+  height: 30px; /* Hauteur fixe pour plus de stabilité */
+}
+
+#commune-search::placeholder {
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 14px;
+}
+
+#commune-search:focus {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: var(--primary);
+}
+
+/* Style des résultats de recherche */
+#search-results {
+  position: absolute;
+  top: calc(100% + 5px);
+  left: 0;
+  right: 0;
+  max-height: 300px;
+  overflow-y: auto;
+  background: var(--dark);
+  border-radius: 4px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  margin-top: 5px;
+  z-index: 1000;
   display: none;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 0;
+}
+
+/* Style du menu latéral */
+#menu {
+  width: 400px; 
+  height: 100%;
+  background: var(--dark);
+  background-image: linear-gradient(to bottom, var(--dark), #2a2e33);
+  color: var(--light);
+  padding: var(--space-lg);
+  box-sizing: border-box;
+  overflow-y: auto; 
+  transition: all var(--transition-normal);
+  box-shadow: 2px 0 10px var(--shadow);
+  position: relative;
+  z-index: 10;
 }
 
 /* Titres du menu */
@@ -693,38 +668,4 @@ hr {
   background: rgba(0,0,0,0.4);
   color: white;
   text-decoration: none;
-}
-
-/* Bouton pour masquer/afficher le menu */
-.toggle-button {
-  position: absolute;
-  top: var(--space-md);
-  left: 420px; /* Juste après le menu */
-  z-index: 11;
-  background: var(--primary);
-  color: white;
-  border: none;
-  border-radius: 50%;
-  width: 32px;
-  height: 32px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 16px;
-  cursor: pointer;
-  box-shadow: 0 2px 6px var(--shadow);
-  transition: all var(--transition-normal);
-}
-
-.toggle-button:hover {
-  background: var(--primary-dark);
-  transform: translateX(3px);
-}
-
-.menu.collapsed + .toggle-button {
-  left: 70px;
-}
-
-.menu.collapsed + .toggle-button:hover {
-  transform: translateX(-3px);
 }
