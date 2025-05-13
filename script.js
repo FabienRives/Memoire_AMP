@@ -1008,4 +1008,22 @@ document.addEventListener('DOMContentLoaded', function () {
       });
     }
   });
+
+  // Gestion du bouton du footer
+  const footerToggle = document.getElementById('footer-toggle');
+  const footer = document.getElementById('footer');
+  
+  if (footerToggle && footer) {
+    footerToggle.addEventListener('click', function() {
+      footer.classList.toggle('collapsed');
+      footerToggle.classList.toggle('raised'); // Simplement basculer la classe raised
+    });
+
+    // S'assurer que le bouton a la bonne classe au chargement
+    if (footer.classList.contains('collapsed')) {
+      footerToggle.classList.remove('raised');
+    } else {
+      footerToggle.classList.add('raised');
+    }
+  }
 });

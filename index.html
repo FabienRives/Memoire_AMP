@@ -24,7 +24,19 @@
     <!-- Structure modifiée - Menu latéral déplacé avant la barre de recherche -->
     <div id="mapContainer">
       <div id="menu">
-        <h3>Fond cartographique</h3>
+        <!-- Ajout des logos -->
+        <div class="logos-container">
+          <a href="https://chairegif.univ-avignon.fr/" target="_blank" rel="noopener noreferrer">
+            <img src="medias/Logo GIF.png" alt="Logo GIF" class="menu-logo">
+          </a>
+          <a href="https://univ-avignon.fr/" target="_blank" rel="noopener noreferrer">
+            <img src="medias/Logo UA.png" alt="Logo UA" class="menu-logo">
+          </a>
+          <a href="https://formations.univ-avignon.fr/formation/master-geographie-amenagement-environnement-et-developpement-geomatique-et-conduite-de-projets-territoriaux/" target="_blank" rel="noopener noreferrer">
+            <img src="medias/Logo GEOTER.png" alt="Logo GEOTER" class="menu-logo">
+          </a>
+        </div>
+        <h3>Fonds cartographiques</h3>
         <div id="basemap-selector">
           <label>
             <input type="radio" name="basemap" value="osm" checked> 
@@ -63,6 +75,7 @@
             <input type="checkbox" id="layer-gisement">
             <label for="layer-gisement">
               <i class="fas fa-layer-group"></i> Gisement Foncier
+              <i class="fas fa-info-circle info-icon" title="Terrains non bâtis représentant un potentiel de développement dans la métropole"></i>
             </label>
             <input type="color" id="color-gisement" value="#ff7800" title="Couleur Gisement">
           </li>
@@ -94,6 +107,24 @@
       </div>
     </div>
   </div>
+
+  
+  
+
+  <!-- Pied de page -->
+  <footer id="footer" class="collapsed">
+    <div class="footer-content">
+      <p>
+        <button id="footer-toggle" title="Afficher/masquer les informations complètes">
+          <i class="fas fa-chevron-down"></i>
+        </button>
+        Réalisé par Fabien RIVES
+      </p>
+      <br
+      <p class="memoire-title">Impact des profils de propriétaires fonciers sur l'urbanisation et l'étalement urbain dans la métropole d'Aix-Marseille-Provence</p>
+      <p class="copyright">2024 / 2025 - Master GEOTER - GIF - Avignon Université</p>
+    </div>
+  </footer>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@turf/turf@6/turf.min.js"></script>
