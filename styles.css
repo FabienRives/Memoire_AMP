@@ -847,3 +847,64 @@ hr {
   color: rgba(255, 255, 255, 0.8);
   margin-top: var(--space-md) !important;
 }
+
+/* Style pour l'icône d'information */
+.info-icon {
+  color: var(--light);
+  margin-left: var(--space-sm);
+  font-size: 14px;
+  cursor: help;
+  transition: all var(--transition-fast);
+}
+
+.info-icon:hover {
+  color: var(--primary);
+  transform: scale(1.2);
+}
+
+/* Popup des critères du gisement foncier */
+#popup-gisement-info {
+  position: fixed;
+  z-index: 10000; /* Très élevé pour être au-dessus de tout */
+  width: 350px;
+  background: white; 
+  border: 2px solid #222;
+  border-radius: 8px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+  font-size: 13px;
+  display: none;
+  pointer-events: auto;
+  overflow: hidden;
+  /* Le positionnement exact sera géré par le JS */
+}
+
+.criteria-header {
+  font-weight: bold;
+  text-align: center;
+  padding: 8px 0;
+  margin: 0;
+}
+
+.inclusion-header {
+  background: #7ed957;
+  color: #222;
+  border-bottom: 1px solid #222;
+}
+
+.exclusion-header {
+  background: #ff2c2c;
+  color: #fff;
+  margin-top: 16px;
+  border-top: 1px solid #222;
+  border-bottom: 1px solid #222;
+}
+
+#popup-gisement-info ul {
+  margin: 12px 18px;
+  padding-left: 18px;
+}
+
+#popup-gisement-info li {
+  margin: 4px 0;
+}
+

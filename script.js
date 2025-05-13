@@ -1,4 +1,23 @@
 document.addEventListener('DOMContentLoaded', function () {
+  // Affichage de la popup info pour le gisement foncier
+  const infoIcon = document.getElementById('info-gisement');
+  const popupInfo = document.getElementById('popup-gisement-info');
+  if (infoIcon && popupInfo) {
+    // Afficher la popup au survol
+    infoIcon.addEventListener('mouseover', function() {
+      const rect = infoIcon.getBoundingClientRect();
+      popupInfo.style.position = 'fixed';
+      popupInfo.style.top = (rect.bottom + 5) + 'px';
+      popupInfo.style.left = (rect.left - 160) + 'px'; // 160 pour centrer
+      popupInfo.style.display = 'block';
+    });
+    
+    // Cacher la popup quand on quitte
+    infoIcon.addEventListener('mouseout', function() {
+      popupInfo.style.display = 'none';
+    });
+  }
+
   const overlay = document.getElementById('loading-overlay');
   const map = L.map('map', { center: [43.3, 5.4], zoom: 10 }); // Centré sur Marseille
   
