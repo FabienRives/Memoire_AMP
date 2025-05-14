@@ -1,30 +1,57 @@
 document.addEventListener('DOMContentLoaded', function () {
-  // Affichage de la popup info pour le gisement foncier
+  // Gestion des infobulles pour le gisement foncier
   const infoIcon = document.getElementById('info-gisement');
   const popupInfo = document.getElementById('popup-gisement-info');
   if (infoIcon && popupInfo) {
-    // Afficher la popup au survol
     infoIcon.addEventListener('mouseover', function() {
       const rect = infoIcon.getBoundingClientRect();
       popupInfo.style.position = 'fixed';
       popupInfo.style.top = (rect.bottom + 5) + 'px';
-      popupInfo.style.left = (rect.left - 160) + 'px'; // 160 pour centrer
+      popupInfo.style.left = (rect.left - 160) + 'px';
       popupInfo.style.display = 'block';
     });
     
-    // Cacher la popup quand on quitte
     infoIcon.addEventListener('mouseout', function() {
       popupInfo.style.display = 'none';
     });
   }
 
+  // Gestion des infobulles pour les propriétaires moraux
+  const infoIconMoraux = document.getElementById('info-moraux');
+  const popupInfoMoraux = document.getElementById('popup-moraux-info');
+  if (infoIconMoraux && popupInfoMoraux) {
+    infoIconMoraux.addEventListener('mouseover', function() {
+      const rect = infoIconMoraux.getBoundingClientRect();
+      popupInfoMoraux.style.position = 'fixed';
+      popupInfoMoraux.style.top = (rect.bottom + 5) + 'px';
+      popupInfoMoraux.style.left = (rect.left - 160) + 'px';
+      popupInfoMoraux.style.display = 'block';
+    });
+    
+    infoIconMoraux.addEventListener('mouseout', function() {
+      popupInfoMoraux.style.display = 'none';
+    });
+  }
+
+  // Ouverture du PDF du mémoire
+  const pdfButton = document.getElementById('open-pdf-button');
+  if (pdfButton) {
+    pdfButton.addEventListener('click', function() {
+      window.open('medias/document_utilisateur.pdf', '_blank');
+    });
+  }
+
   const overlay = document.getElementById('loading-overlay');
-  const map = L.map('map', { center: [43.3, 5.4], zoom: 10 }); // Centré sur Marseille
   
-  // Liste des communes et leurs géométries
+  // Config globale des popups Leaflet
+  L.Popup.prototype.options.autoPan = true;
+  L.Popup.prototype.options.autoPanPadding = [50, 50];
+  
+  const map = L.map('map', { center: [43.3, 5.4], zoom: 10 }); // Marseille
+  
   let communesList = [];
 
-  // Définition des fonds de carte
+  // Fonds de carte disponibles
   const basemaps = {
     osm: L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       attribution: '&copy; OpenStreetMap contributors'
@@ -37,62 +64,54 @@ document.addEventListener('DOMContentLoaded', function () {
     })
   };
 
-  // Ajout du fond de carte OpenStreetMap par défaut
   basemaps.osm.addTo(map);
   
-  // Gestionnaire d'événements pour les boutons radio de fond de carte
+  // Changement du fond de carte
   document.querySelectorAll('input[name="basemap"]').forEach(input => {
     input.addEventListener('change', function() {
-      // Suppression de tous les fonds de carte
       Object.values(basemaps).forEach(layer => {
         if (map.hasLayer(layer)) {
           map.removeLayer(layer);
         }
       });
       
-      // Ajout du fond de carte sélectionné
       basemaps[this.value].addTo(map);
     });
   });
 
-  // Fonction réutilisable pour ajouter des popups à n'importe quelle couche
+  // Fonction générique pour ajouter des popups
   function addPopupToLayer(layer) {
     return layer.options.onEachFeature = function(feature, layer) {
       if (feature.properties) {
-        // Créer le contenu HTML
         let content = '<div class="popup">';
         
-        // Ajouter un titre si disponible
         if (feature.properties.nom || feature.properties.name || feature.properties.NOM || feature.properties.NAME) {
           content += `<h4>${feature.properties.nom || feature.properties.name || feature.properties.NOM || feature.properties.NAME}</h4>`;
         }
         
-        // Ajouter toutes les propriétés
         content += '<table>';
         for (const prop in feature.properties) {
-          // Ignorer les propriétés techniques
           if (!prop.startsWith('_') && prop !== 'centroid') {
             content += `<tr><th>${prop}</th><td>${feature.properties[prop]}</td></tr>`;
           }
         }
         content += '</table></div>';
         
-        // Ajouter la popup
         layer.bindPopup(content, {
           maxHeight: 300,
-          maxWidth: 300
+          maxWidth: 300,
+          autoPan: true
         });
       }
     };
   }
   
-  // Préparation des couches GeoJSON avec style par défaut et popups
+  // Préparation des couches GeoJSON
   const layers = {
-    epci:     L.geoJSON(null, { 
+    epci: L.geoJSON(null, { 
       style: { color: '#0078ff', weight: 2 },
       onEachFeature: function(feature, layer) {
         if (feature.properties) {
-          // Créer le contenu HTML
           let content = '<div class="popup">';
           if (feature.properties.nom || feature.properties.NOM) {
             content += `<h4>${feature.properties.nom || feature.properties.NOM}</h4>`;
@@ -127,7 +146,7 @@ document.addEventListener('DOMContentLoaded', function () {
       style: { color: '#000000', weight: 2 },
       onEachFeature: function(feature, layer) {
         if (feature.properties) {
-          // Champs et couleurs pour le diagramme secteur
+          // Données pour le diagramme
           const fields = [
             'PourcentageComm',
             'PourcentageCopro',
@@ -141,7 +160,7 @@ document.addEventListener('DOMContentLoaded', function () {
             'PourcentageAssocies',
           ];
           
-          // Correspondance entre les champs de pourcentage et de surface
+          // Correspondance avec les champs de surface
           const surfaceFields = [
             'SurfComm',
             'SurfCopro',
@@ -167,31 +186,35 @@ document.addEventListener('DOMContentLoaded', function () {
             'Associés',
           ];
           const colors = [
-            '#F28E2B', // orange Commune
-            '#9C755F', // brun Copropriétaires
-            '#76B7B2', // turquoise Département
-            '#EDC948', // jaune doré Office HLM
-            '#4E79A7', // bleu PMNR (Personnes morales non remarquables)
-            '#B07AA1', // violet Région
-            '#FF9DA7', // rose clair SEM
-            '#59A14F', // vert Établissements publics
-            '#E15759', // rouge État
-            '#BAB0AC', // gris clair Associés
+            '#F28E2B', // orange
+            '#9C755F', // brun
+            '#76B7B2', // turquoise
+            '#EDC948', // jaune
+            '#4E79A7', // bleu
+            '#B07AA1', // violet
+            '#FF9DA7', // rose
+            '#59A14F', // vert
+            '#E15759', // rouge
+            '#BAB0AC', // gris
           ];
-          // Extraire les valeurs (en pourcentage) et de surface, puis préparer tri
+          
+          // Extraction et tri des données
           let rawData = fields.map((f, i) => ({
             value: Number(feature.properties[f]) || 0,
             label: labels[i],
             color: colors[i],
             surface: Number(feature.properties[surfaceFields[i]]) || 0
           }));
-          // Trier par ordre décroissant selon la surface
+          
+          // Tri par surface décroissante
           rawData.sort((a, b) => b.surface - a.surface);
-          // Décomposer pour Chart.js
+          
+          // Préparation pour Chart.js
           const data = rawData.map(d => d.value);
           const sortedLabels = rawData.map(d => d.label);
           const sortedColors = rawData.map(d => d.color);
-          // Générer un ID unique pour le canvas
+          
+          // ID unique pour le canvas
           const canvasId = 'pie-moraux-' + (feature.properties.code_insee || feature.properties.insee || Math.random().toString(36).substr(2, 6));
           let content = '<div class="popup">';
           if (feature.properties.nom || feature.properties.NOM) {
@@ -213,7 +236,7 @@ document.addEventListener('DOMContentLoaded', function () {
             autoPan: true
           });
           layer.on('popupopen', function() {
-            // Crée le diagramme secteur Chart.js
+            // Création du diagramme
             const ctx = document.getElementById(canvasId).getContext('2d');
             new Chart(ctx, {
               type: 'pie',
@@ -233,7 +256,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 }
               }
             });
-            // Ajout du listener sur le bouton d'ouverture
+            // Bouton pour ouvrir en fenêtre séparée
             const btn = document.getElementById('open-diag-' + canvasId);
             if (btn) {
               btn.addEventListener('click', function() {
@@ -287,7 +310,6 @@ document.addEventListener('DOMContentLoaded', function () {
             autoPan: true
           });
           layer.on('popupopen', function() {
-            // Crée le diagramme secteur Chart.js
             const ctx = document.getElementById(canvasId).getContext('2d');
             new Chart(ctx, {
               type: 'pie',
@@ -311,23 +333,23 @@ document.addEventListener('DOMContentLoaded', function () {
         }
       }
     }),
-    // Pour simplifier l'accès aux couches spéciales
+    // Accès aux couches spéciales
     getCluster: function() { return window.clustersLayer; },
     getPolygons: function() { return window.polygonsLayer; }
   };
 
   // Variables globales
   let gisementData = null;
-  window.clustersLayer = null;     // Couche pour les cercles (vue éloignée)
-  window.polygonsLayer = null;   // Couche pour les vraies géométries (vue rapprochée)
+  window.clustersLayer = null;     // Clusters (vue éloignée) 
+  window.polygonsLayer = null;     // Géométries réelles (vue rapprochée)
   let currentZoom = map.getZoom();
   
-  // Log de débogage avec style
+  // Logger stylisé pour le debug
   function log(title, ...args) {
     console.log(`%c${title}`, 'background: #222; color: #bada55; padding: 3px;', ...args);
   }
 
-  // Fonction de recherche de communes
+  // Recherche de communes
   function setupCommuneSearch() {
     const searchInput = document.getElementById('commune-search');
     const searchResults = document.getElementById('search-results');
@@ -345,6 +367,7 @@ document.addEventListener('DOMContentLoaded', function () {
     // Filtrer les communes avec debounce pour améliorer les performances
     searchInput.addEventListener('input', function() {
       const searchText = this.value.trim();
+      console.log('Input event - texte saisi:', searchText);
       
       // Effacer le timer existant
       clearTimeout(debounceTimer);
@@ -362,6 +385,9 @@ document.addEventListener('DOMContentLoaded', function () {
     
     // Fonction pour mettre à jour les résultats de recherche
     function updateSearchResults(searchText) {
+      console.log('updateSearchResults appelé avec:', searchText);
+      console.log('communesList disponible:', communesList.length);
+      
       const searchLower = searchText.toLowerCase();
       
       // Tri des communes : d'abord les correspondances exactes au début, puis triées par ordre alphabétique
@@ -379,6 +405,7 @@ document.addEventListener('DOMContentLoaded', function () {
       
       // Combiner et limiter les résultats
       const matches = [...exactMatches, ...partialMatches].slice(0, 10);
+      console.log('Résultats trouvés:', matches.length);
       
       // Afficher les résultats
       searchResults.innerHTML = '';
@@ -413,13 +440,15 @@ document.addEventListener('DOMContentLoaded', function () {
           searchResults.appendChild(div);
         });
         searchResults.style.display = 'block';
+        console.log('Affichage des résultats activé');
       } else {
         // Afficher un message si aucun résultat n'est trouvé
         const noResult = document.createElement('div');
-        noResult.textContent = 'Aucune commune trouvée';
+        noResult.textContent = 'Aucune commune trouvée dans la métropole';
         noResult.className = 'no-results';
         searchResults.appendChild(noResult);
         searchResults.style.display = 'block';
+        console.log('Aucun résultat trouvé');
       }
     }
     
@@ -488,26 +517,24 @@ document.addEventListener('DOMContentLoaded', function () {
     });
   }
 
-  // Standardiser toutes les popups pour avoir un style cohérent
+  // Standardisation des popups
   function standardizeAllPopups() {
-    // On ne modifie que les couches standard, pas celle des moraux qui a des diagrammes spécifiques
-    // et pas les clusters qui ont une structure différente
+    // Exclus: moraux (diagrammes) et clusters
     const standardLayers = ['epci', 'communes', 'gisement'];
     
     for (const layerName of standardLayers) {
       if (layers[layerName] && layers[layerName] instanceof L.GeoJSON) {
         const layer = layers[layerName];
         
-        // Conserver la référence à la fonction originale si elle existe
+        // Préserver la fonction originale
         const originalOnEachFeature = layer.options.onEachFeature;
         
-        // Définir la nouvelle fonction qui ajoute juste le style de la popup
+        // Définir style uniforme
         layer.options.onEachFeature = function(feature, layer) {
           if (feature.properties) {
-            // Créer le contenu HTML uniforme
             let content = '<div class="popup">';
             
-            // Ajouter un titre si disponible
+            // Titre
             const name = feature.properties.nom || feature.properties.name || 
                       feature.properties.NOM || feature.properties.NAME || 
                       feature.properties.NOM_M;
@@ -515,29 +542,27 @@ document.addEventListener('DOMContentLoaded', function () {
             if (name) {
               content += `<h4>${name}</h4>`;
             } else if (layerName) {
-              // Utiliser le nom de la couche si pas de nom dans les propriétés
               content += `<h4>${layerName.charAt(0).toUpperCase() + layerName.slice(1)}</h4>`;
             }
             
-            // Ajouter toutes les propriétés dans un tableau
+            // Tableau de propriétés
             content += '<table>';
             for (const prop in feature.properties) {
-              // Ignorer les propriétés techniques
               if (!prop.startsWith('_') && prop !== 'centroid') {
                 content += `<tr><th>${prop}</th><td>${feature.properties[prop]}</td></tr>`;
               }
             }
             content += '</table></div>';
             
-            // Ajouter la popup
             layer.bindPopup(content, {
               maxHeight: 300,
-              maxWidth: 300
+              maxWidth: 300,
+              autoPan: true
             });
           }
         };
         
-        // Réappliquer onEachFeature à toutes les features existantes
+        // Réappliquer aux éléments existants
         if (layer.getLayers && layer.getLayers().length > 0) {
           layer.getLayers().forEach(l => {
             if (l.feature && l.feature.properties) {
@@ -548,10 +573,10 @@ document.addEventListener('DOMContentLoaded', function () {
       }
     }
     
-    // Standardiser les popups pour les clusters standards uniquement
+    // Popups pour les clusters
     if (window.clustersLayer && window.clustersLayer.getLayers) {
       window.clustersLayer.getLayers().forEach(circle => {
-        if (!circle._customDiagram) { // Ne modifie pas les cercles avec des diagrammes personnalisés
+        if (!circle._customDiagram) { // Préserver les diagrammes personnalisés
           circle.off('click');
           circle.on('click', function() {
             const count = circle.count || 'plusieurs';
@@ -565,7 +590,7 @@ document.addEventListener('DOMContentLoaded', function () {
               </div>
             `;
             
-            L.popup({ maxHeight: 300, maxWidth: 300 })
+            L.popup({ maxHeight: 300, maxWidth: 300, autoPan: true })
               .setLatLng(circle.getLatLng())
               .setContent(popupContent)
               .openOn(map);
@@ -587,19 +612,18 @@ document.addEventListener('DOMContentLoaded', function () {
   })
   .catch(err => log('Erreur chargement GisementFoncier:', err));
   
-  // Chargement du fichier des communes
+  // Chargement des communes
   const p2 = fetch('Communes_AMP.geojson')
   .then(r => r.json())
   .then(data => {
     log('Communes_AMP chargé:', data.features.length, 'communes');
     
-    // Ajouter les données à la couche des communes
     layers.communes.addData(data);
     
-    // Extraire et stocker les noms et géométries des communes
+    // Construction de la liste des communes
     data.features.forEach(feature => {
       if (feature.properties && feature.properties.NOM_M) {
-        // Calculer les limites (bounds) de la commune pour le zoom
+        // Calcul des limites pour le zoom
         const layer = L.geoJSON(feature);
         const bounds = layer.getBounds();
         
@@ -611,11 +635,11 @@ document.addEventListener('DOMContentLoaded', function () {
       }
     });
     
-    // Trier les communes par ordre alphabétique
+    // Tri alphabétique
     communesList.sort((a, b) => a.nom.localeCompare(b.nom));
     log('Liste des communes créée:', communesList.length, 'communes');
+    console.log('Contenu de communesList:', communesList);
     
-    // Initialiser la recherche de communes
     setupCommuneSearch();
     
     return 'OK';
@@ -631,9 +655,9 @@ document.addEventListener('DOMContentLoaded', function () {
     .then(r => r.json())
     .then(data => layers.moraux.addData(data));
 
-  // On attend que toutes les données soient chargées
+  // Attente du chargement de toutes les données
   Promise.all([p1, p2, p3, p4]).then(() => {
-    // Calculer les centroïdes des features pour optimiser les performances
+    // Calcul des centroïdes pour optimisation
     function calculateCentroids() {
       log('Calcul des centroïdes', 'Démarrage...');
       if (!gisementData || !gisementData.features) return;
@@ -653,14 +677,13 @@ document.addEventListener('DOMContentLoaded', function () {
           lat = coords.reduce((sum, c) => sum + c[1], 0) / coords.length;
         }
         
-        feature.properties.centroid = [lat, lng]; // Stocker les coordonnées du centroide
+        feature.properties.centroid = [lat, lng];
       });
       log('Calcul des centroïdes', 'Terminé');
     }
     
-    // Nettoyer les couches gisement existantes
+    // Nettoyage des couches gisement
     function cleanLayers() {
-      // Supprimer l'ancienne couche de clusters si elle existe
       if (window.clustersLayer) {
         if (map.hasLayer(window.clustersLayer)) {
           map.removeLayer(window.clustersLayer);
@@ -668,7 +691,6 @@ document.addEventListener('DOMContentLoaded', function () {
         window.clustersLayer = null;
       }
       
-      // Supprimer l'ancienne couche de polygones si elle existe
       if (window.polygonsLayer) {
         if (map.hasLayer(window.polygonsLayer)) {
           map.removeLayer(window.polygonsLayer);
@@ -677,17 +699,14 @@ document.addEventListener('DOMContentLoaded', function () {
       }
     }
     
-    // Afficher les polygones avec leur géométrie réelle
+    // Affichage des polygones du gisement
     function displayPolygons(features) {
-      cleanLayers(); // Nettoyer les couches existantes
+      cleanLayers();
       
       log('MODE POLYGONES', `Affichage de ${features.length} polygones`);
-      
-      // Montrer TOUTES les entités sans limitation
       log('INFO', `Affichage de TOUTES les ${features.length} entités visibles`);
-      // Aucune limitation
       
-      // Créer la couche GeoJSON avec la géométrie complète
+      // Création de la couche GeoJSON
       const color = document.getElementById('color-gisement').value;
       window.polygonsLayer = L.geoJSON({ 
         type: 'FeatureCollection', 
@@ -702,55 +721,97 @@ document.addEventListener('DOMContentLoaded', function () {
             fillOpacity: 0.3
           };
         },
-        // Rendre chaque entité cliquable
         onEachFeature: function(feature, layer) {
           if (feature.properties) {
-            // Créer le contenu HTML
-            let content = '<div class="popup">';
+            // Association du contenu et gestion manuelle
+            layer._popupContent = createGisementPopupContent(feature);
             
-            // Ajouter un titre si disponible
-            if (feature.properties.nom || feature.properties.name) {
-              content += `<h4>${feature.properties.nom || feature.properties.name}</h4>`;
-            }
-            
-            // Ajouter toutes les propriétés
-            content += '<table>';
-            for (const prop in feature.properties) {
-              // Ignorer les propriétés techniques
-              if (!prop.startsWith('_') && prop !== 'centroid') {
-                content += `<tr><th>${prop}</th><td>${feature.properties[prop]}</td></tr>`;
-              }
-            }
-            content += '</table></div>';
-            
-            // Ajouter la popup
-            layer.bindPopup(content, {
-              maxHeight: 300,
-              maxWidth: 300
+            // Gestionnaire de clic personnalisé
+            layer.off('click');
+            layer.on('click', function(e) {
+              // Création dynamique de la popup
+              const popup = L.popup({
+                maxHeight: 300,
+                maxWidth: 300,
+                autoPan: true,
+                autoPanPadding: [100, 100]
+              }).setLatLng(e.latlng)
+                .setContent(layer._popupContent);
+              
+              map.closePopup();
+              popup.openOn(map);
+              
+              // Centrage forcé
+              setTimeout(() => {
+                if (popup.isOpen()) {
+                  map.panTo(e.latlng, {
+                    animate: true,
+                    duration: 0.5,
+                    easeLinearity: 0.5,
+                    noMoveStart: true
+                  });
+                }
+              }, 50);
             });
           }
         }
       });
       
-      // Ajouter la couche à la carte
       window.polygonsLayer.addTo(map);
     }
     
-    // Afficher les clusters (points) pour les vues éloignées
+    // Génération du contenu des popups
+    function createGisementPopupContent(feature) {
+      let content = '<div class="popup">';
+      
+      if (feature.properties.nom || feature.properties.name) {
+        content += `<h4>${feature.properties.nom || feature.properties.name}</h4>`;
+      } else {
+        content += `<h4>Gisement Foncier</h4>`;
+      }
+      
+      content += '<table>';
+      for (const prop in feature.properties) {
+        if (!prop.startsWith('_') && prop !== 'centroid') {
+          content += `<tr><th>${prop}</th><td>${feature.properties[prop]}</td></tr>`;
+        }
+      }
+      content += '</table></div>';
+      
+      return content;
+    }
+    
+    // Gestionnaire global pour les popups
+    map.on('popupopen', function(e) {
+      const popup = e.popup;
+      const latlng = popup.getLatLng();
+      
+      // Centrage si hors-champ
+      const mapBounds = map.getBounds();
+      if (!mapBounds.contains(latlng)) {
+        map.panTo(latlng, {
+          animate: true,
+          duration: 0.5,
+          easeLinearity: 0.5,
+          noMoveStart: true
+        });
+      }
+    });
+    
+    // Affichage en clusters pour les vues éloignées
     function displayClusters(features) {
-      cleanLayers(); // Nettoyer les couches existantes
+      cleanLayers();
       
       log('MODE CLUSTERS', `Clustering de ${features.length} éléments`);
       
-      // Créer une nouvelle couche pour les clusters
       window.clustersLayer = L.layerGroup();
       
-      // Définir la taille de la grille en fonction du zoom
+      // Taille de grille selon le zoom
       const gridSize = currentZoom < 6 ? 50 : 
                       currentZoom < 8 ? 100 : 
                       currentZoom < 10 ? 200 : 300;
       
-      // Regrouper les entités par position sur la grille
+      // Regroupement par position
       const clusters = {};
       features.forEach(feature => {
         if (!feature.properties.centroid) return;
@@ -773,13 +834,13 @@ document.addEventListener('DOMContentLoaded', function () {
         clusters[key].count++;
       });
       
-      // Créer un marqueur pour chaque cluster
+      // Création des marqueurs
       const color = document.getElementById('color-gisement').value;
       Object.values(clusters).forEach(cluster => {
         if (cluster.count > 0) {
           const position = [cluster.lat / cluster.count, cluster.lng / cluster.count];
           
-          // Taille proportionnelle au nombre d'entités, mais plus petite qu'avant
+          // Taille proportionnelle
           const radius = Math.min(20, Math.max(5, 3 + Math.sqrt(cluster.count)));
           
           const circle = L.circleMarker(position, {
@@ -791,15 +852,14 @@ document.addEventListener('DOMContentLoaded', function () {
             fillOpacity: 0.6
           });
           
-          // Infobulle au survol
+          // Tooltip
           circle.bindTooltip(`${cluster.count} entités`, { 
             permanent: false, 
             direction: 'top' 
           });
           
-          // Rendre le cluster cliquable
+          // Popup au clic
           circle.on('click', function() {
-            // Afficher des informations sur le cluster
             const popupContent = `
               <div class="popup">
                 <h4>Groupe d'entités</h4>
@@ -808,7 +868,7 @@ document.addEventListener('DOMContentLoaded', function () {
               </div>
             `;
             
-            L.popup({ maxHeight: 300, maxWidth: 300 })
+            L.popup({ maxHeight: 300, maxWidth: 300, autoPan: true })
               .setLatLng(position)
               .setContent(popupContent)
               .openOn(map);
@@ -818,32 +878,31 @@ document.addEventListener('DOMContentLoaded', function () {
         }
       });
       
-      // Ajouter la couche à la carte
       window.clustersLayer.addTo(map);
     }
     
-    // Fonction principale pour décider quel mode d'affichage utiliser
+    // Sélection du mode d'affichage selon le contexte
     function updateGisementLayer() {
       if (!gisementData || !gisementData.features) {
         log('ERREUR', 'Aucune donnée GeoJSON disponible');
         return;
       }
       
-      // Vérifier si la couche est active
+      // Vérification d'activation
       const checkboxGisement = document.getElementById('layer-gisement');
       if (!checkboxGisement || !checkboxGisement.checked) {
         cleanLayers();
         return;
       }
       
-      // Filtrer les entités visibles dans la vue actuelle
+      // Filtrage par vue actuelle
       const bounds = map.getBounds();
       const visibleFeatures = gisementData.features.filter(feature => {
         const centroid = feature.properties.centroid;
         return centroid && bounds.contains(centroid);
       });
       
-      // Calculer le pourcentage d'entités visibles
+      // Statistiques
       const totalFeatures = gisementData.features.length;
       const percentVisible = (visibleFeatures.length / totalFeatures) * 100;
       
@@ -852,9 +911,7 @@ document.addEventListener('DOMContentLoaded', function () {
           `Visibles: ${visibleFeatures.length}/${totalFeatures}`, 
           `${percentVisible.toFixed(1)}%`);
       
-      // Décider du mode d'affichage en fonction du pourcentage visible et du zoom
-      // Modifier la logique pour que les polygones s'affichent à TOUS les niveaux de zoom élevés
-      // Mode polygones si zoom > 25 (ZOOM TRÈS ÉLEVÉ) OU peu d'entités visibles (<8%)
+      // Choix du mode d'affichage
       if (currentZoom > 25 || percentVisible < 8) {
         log('Décision', 'FORCE MODE POLYGONES', `Zoom ${currentZoom} ou ${percentVisible.toFixed(1)}% visible`);
         displayPolygons(visibleFeatures);
@@ -864,19 +921,15 @@ document.addEventListener('DOMContentLoaded', function () {
       }
     }
 
-    // Calculer les centroïdes une seule fois au chargement
+    // Initialisation
     calculateCentroids();
-    
-    // Fonction pour nettoyer les couches accessibles dans tout le code
     window.cleanLayers = cleanLayers;
-    
-    // Fonction pour mettre à jour la couche gisement accessible dans tout le code
     window.updateGisementLayer = updateGisementLayer;
     
-    // Ajoute la couche Communes AMP par défaut
+    // Couche commune par défaut
     layers.communes.addTo(map);
 
-    // Vérifie si les autres couches sont cochées et les ajoute si nécessaire
+    // Activation des couches initialement cochées
     const epciCheckbox = document.getElementById('layer-epci');
     if (epciCheckbox && epciCheckbox.checked) {
       layers.epci.addTo(map);
@@ -887,14 +940,14 @@ document.addEventListener('DOMContentLoaded', function () {
       updateGisementLayer();
     }
 
-    // Ajuste l'emprise sur toutes les couches chargées (en utilisant les données brutes pour gisement)
+    // Ajustement de l'emprise
     let allBounds = layers.epci.getBounds().extend(layers.communes.getBounds());
     if (gisementData && gisementData.features.length > 0) {
       let gisementBounds = L.geoJSON(gisementData).getBounds();
       allBounds = allBounds.extend(gisementBounds);
     }
 
-    // On prépare les listeners mais on ne les active qu'après fitBounds
+    // Préparation des écouteurs
     let listenersActive = false;
     const moveZoomHandler = () => {
       if (listenersActive && document.getElementById('layer-gisement').checked) {
@@ -903,25 +956,33 @@ document.addEventListener('DOMContentLoaded', function () {
     };
     map.on('moveend zoomend', moveZoomHandler);
 
-    // fitBounds sans déclencher updateGisementLayer
+    // Zoom initial sans déclencher la mise à jour
     listenersActive = false;
     map.fitBounds(allBounds);
     
-    // Activer à nouveau les écouteurs d'événements et terminer l'initialisation
+    // Finalisation
     setTimeout(() => {
       listenersActive = true;
-      
-      // Standardiser toutes les popups une fois que toutes les couches sont chargées
       standardizeAllPopups();
       
-      // Masquer l'overlay de chargement
+      // Masquage du chargement
       overlay.classList.add('hidden');
       setTimeout(() => overlay.style.display = 'none', 500);
       
+      // Afficher l'application
+      document.getElementById('appContainer').classList.add('loaded');
+      
       log('Application chargée', 'Toutes les données ont été chargées avec succès');
+      
+      // Rafraîchissement différé du gisement
+      setTimeout(() => {
+        if (document.getElementById('layer-gisement').checked) {
+          window.updateGisementLayer();
+        }
+      }, 1000);
     }, 500);
     
-    // Ajouter des styles CSS pour les popups
+    // Styles CSS pour les popups
     const style = document.createElement('style');
     style.textContent = `
       .popup h4 {
@@ -957,22 +1018,18 @@ document.addEventListener('DOMContentLoaded', function () {
     document.head.appendChild(style);
   });
 
-  // Gestion de la visibilité via checkbox
-  // Gérer les changements de couches (checkboxes)
+  // Gestion des checkboxes de couches
   document.querySelectorAll('#layer-list input[type="checkbox"]').forEach(cb => {
     cb.addEventListener('change', e => {
       const name = e.target.id.replace('layer-', '');
       
       if (name === 'gisement') {
         if (e.target.checked) {
-          // Réactiver la couche gisement
           window.updateGisementLayer();
         } else {
-          // Désactiver les couches gisement
           window.cleanLayers();
         }
       } else {
-        // Autres couches (EPCI, communes, moraux...)
         if (e.target.checked) {
           layers[name].addTo(map);
         } else {
@@ -982,7 +1039,7 @@ document.addEventListener('DOMContentLoaded', function () {
     });
   });
 
-  // Gestion du color picker pour la couche moraux
+  // Gestion des couleurs
   const colorMoraux = document.getElementById('color-moraux');
   if (colorMoraux) {
     colorMoraux.addEventListener('input', function(e) {
@@ -990,9 +1047,7 @@ document.addEventListener('DOMContentLoaded', function () {
     });
   }
 
-  // Gérer les changements de couleur
   document.getElementById('color-gisement').addEventListener('input', function() {
-    // Si la couche gisement est active, la mettre à jour avec la nouvelle couleur
     if (document.getElementById('layer-gisement').checked) {
       window.updateGisementLayer();
     }
@@ -1006,7 +1061,7 @@ document.addEventListener('DOMContentLoaded', function () {
     layers.communes.setStyle({ color: e.target.value });
   });
 
-  // Rendre la liste triable et gérer l'ordre z-index
+  // Tri des couches (jQuery UI sortable)
   $('#layer-list').sortable({
     handle: '.drag-handle',
     helper: 'clone',
@@ -1028,17 +1083,17 @@ document.addEventListener('DOMContentLoaded', function () {
     }
   });
 
-  // Gestion du bouton du footer
+  // Gestion du footer
   const footerToggle = document.getElementById('footer-toggle');
   const footer = document.getElementById('footer');
   
   if (footerToggle && footer) {
     footerToggle.addEventListener('click', function() {
       footer.classList.toggle('collapsed');
-      footerToggle.classList.toggle('raised'); // Simplement basculer la classe raised
+      footerToggle.classList.toggle('raised');
     });
 
-    // S'assurer que le bouton a la bonne classe au chargement
+    // État initial
     if (footer.classList.contains('collapsed')) {
       footerToggle.classList.remove('raised');
     } else {

@@ -89,7 +89,7 @@ html, body {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  z-index: 2000;
+  z-index: 10000;
   opacity: 1;
   transition: opacity var(--transition-slow);
   backdrop-filter: blur(5px);
@@ -157,12 +157,19 @@ html, body {
   text-shadow: 0 2px 4px rgba(0,0,0,0.3);
 }
 
-/* Ajout d'un conteneur global pour l'application */
+
 #appContainer {
   display: flex;
-  height: 100%; /* Prend toute la hauteur disponible moins le footer */
+  height: 100%;
   width: 100%;
-  /* La transition de hauteur est maintenant gérée par le footer lui-même via max-height */
+  visibility: hidden;
+  opacity: 0;
+  transition: opacity 0.5s ease, visibility 0.5s ease;
+}
+
+#appContainer.loaded {
+  visibility: visible;
+  opacity: 1;
 }
 
 /* Layout carte + menu */
@@ -203,35 +210,38 @@ html, body {
   position: relative;
   height: 60px;
   display: flex;
+  align-items: center;
+  justify-content: space-between;
   width: 100%; 
   z-index: 100;
   background-color: var(--dark);
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-  padding-bottom: 10px;
+  padding: 0;
+  box-sizing: border-box;
 }
 
-/* Boîte de recherche - style simplifié et plus intégré */
+/* Barre de recherche */
 #search-box {
-  position: absolute;
-  top: 10px;
-  left: 20px; /* Marge depuis la gauche du conteneur */
+  position: relative;
+  top: 0;
+  left: 20px;
   background: none;
   color: var(--light);
   padding: 0;
   z-index: 1000;
   max-width: 400px;
-  width: calc(100% - 40px); /* Ajustement pour les marges */
+  width: calc(100% - 250px);
   transition: all 0.2s ease;
   margin: 0;
   border: none;
   box-shadow: none;
+  display: flex;
+  align-items: center;
+  height: 100%;
 }
 
-/* Simplification des états de focus et hover */
 #search-box.focused, #search-box:focus-within, #search-box:hover {
-  box-shadow: none; /* Suppression des ombres */
-  border: none; /* Suppression des bordures */
-  background: none; /* Suppression du fond */
+  box-shadow: 0 0 10px rgba(255, 255, 255, 0.2);
 }
 
 .search-container {
@@ -241,41 +251,109 @@ html, body {
   width: 100%;
 }
 
-.search-container i {
+.search-container .fa-search {
   position: absolute;
-  left: 10px;
+  left: 15px;
   top: 50%;
   transform: translateY(-50%);
-  color: rgba(255, 255, 255, 0.6);
-  font-size: 16px;
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 18px;
   transition: color 0.2s ease;
+  z-index: 10;
 }
 
-#search-box:focus-within .search-container i {
-  color: var(--primary); /* Utilisation de la couleur primaire pour un meilleur contraste */
+#search-box:focus-within .search-container .fa-search {
+  color: var(--primary);
 }
 
 #commune-search {
-  width: 100%;
-  padding: 8px 12px 8px 35px;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 4px;
-  background: rgba(255, 255, 255, 0.05);
+  flex: 1;
+  min-width: 0;
+  padding: 8px 12px 8px 45px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.15);
   color: white;
-  font-size: 14px;
+  font-size: 16px;
   transition: all 0.2s ease;
   outline: none;
-  height: 30px; /* Hauteur fixe pour plus de stabilité */
+  height: 38px;
+  box-sizing: border-box;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
 }
 
 #commune-search::placeholder {
-  color: rgba(255, 255, 255, 0.5);
-  font-size: 14px;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 15px;
 }
 
 #commune-search:focus {
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.2);
   border-color: var(--primary);
+  box-shadow: 0 0 10px rgba(0, 120, 255, 0.3);
+}
+
+/* Style pour le bouton PDF */
+#open-pdf-button {
+  background: var(--primary);
+  border: 2px solid rgba(255, 255, 255, 0.7);
+  color: white;
+  cursor: pointer;
+  font-size: 16px;
+  padding: 0 18px;
+  margin-right: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 38px;
+  border-radius: 6px;
+  font-weight: bold;
+  transition: all 0.2s ease;
+  box-sizing: border-box;
+  flex-shrink: 0;
+  box-shadow: 0 0 15px rgba(0, 120, 255, 0.5);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+  position: relative;
+  overflow: hidden;
+  animation: attention-pulse 3s infinite;
+  align-self: center;
+}
+
+@keyframes attention-pulse {
+  0% { transform: scale(1); box-shadow: 0 0 15px rgba(0, 120, 255, 0.5); }
+  50% { transform: scale(1.05); box-shadow: 0 0 20px rgba(0, 120, 255, 0.7); }
+  100% { transform: scale(1); box-shadow: 0 0 15px rgba(0, 120, 255, 0.5); }
+}
+
+#open-pdf-button:before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -100%;
+  width: 40%;
+  height: 200%;
+  background: rgba(255, 255, 255, 0.3);
+  transform: rotate(25deg);
+  transition: all 0.6s ease;
+}
+
+#open-pdf-button:hover:before {
+  left: 120%;
+}
+
+#open-pdf-button:hover {
+  color: white;
+  background-color: var(--primary-dark); /* Bleu plus foncé au survol */
+  border-color: white;
+  transform: translateY(-2px) scale(1.03);
+  box-shadow: 0 5px 15px rgba(0, 120, 255, 0.7);
+}
+
+#open-pdf-button i {
+  display: block;
+  position: static;
+  font-size: 18px;
+  margin-right: 2px;
 }
 
 /* Style des résultats de recherche */
@@ -288,12 +366,38 @@ html, body {
   overflow-y: auto;
   background: var(--dark);
   border-radius: 4px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3), 0 0 0 2px var(--primary);
   margin-top: 5px;
-  z-index: 1000;
+  z-index: 9999;
   display: none;
   border: 1px solid rgba(255, 255, 255, 0.1);
   padding: 0;
+  pointer-events: auto;
+}
+
+#search-results div {
+  padding: 10px 15px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  color: var(--light);
+}
+
+#search-results div:hover, 
+#search-results div.active {
+  background-color: var(--primary);
+  color: white;
+}
+
+#search-results div.no-results {
+  cursor: default;
+  color: rgba(255, 255, 255, 0.6);
+  text-align: center;
+  padding: 15px;
+}
+
+#search-results div.no-results:hover {
+  background-color: transparent;
 }
 
 /* Style du menu latéral */
@@ -558,8 +662,6 @@ hr {
   box-shadow: inset 0 0 20px rgba(0,0,0,0.05);
 }
 
-
-
 /* Style des popups Leaflet */
 .leaflet-popup-content-wrapper {
   border-radius: var(--radius-md);
@@ -591,18 +693,16 @@ hr {
   overflow: visible !important;
   width: auto !important;
   box-sizing: border-box !important;
-  border: 6px solid white !important; /* Ajout du buffer blanc */
+  border: 6px solid white !important;
   min-width: 450px !important;
   max-width: 550px !important;
 }
 
-/* Taille des popups avec diagrammes */
 .leaflet-popup-content {
   min-width: 450px !important;
   max-width: 550px !important;
 }
 
-/* Titre long pour la répartition de surface */
 .popup h4 {
   color: #FFFFFF !important;
 }
@@ -611,7 +711,6 @@ hr {
   font-size: 13px;
 }
 
-/* Canvas du diagramme */
 .popup canvas {
   max-width: 100%;
   height: auto !important;
@@ -722,23 +821,23 @@ hr {
   border-top: 1px solid var(--primary);
   box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.2);
   position: relative;
-  overflow: hidden; /* Important pour l'animation max-height */
+  overflow: hidden;
   transition: max-height 0.5s cubic-bezier(0.645, 0.045, 0.355, 1), 
               padding 0.5s cubic-bezier(0.645, 0.045, 0.355, 1), 
               font-size 0.3s cubic-bezier(0.645, 0.045, 0.355, 1),
               background-color 0.5s cubic-bezier(0.645, 0.045, 0.355, 1);
 }
 
-/* État déplié du pied de page (état par défaut stylistique) */
+/* État déplié du pied de page */
 #footer:not(.collapsed) {
-  max-height: 200px; /* Hauteur suffisante pour le contenu */
+  max-height: 200px;
   padding: var(--space-md) var(--space-lg);
   font-size: 14px;
 }
 
 /* État réduit du pied de page */
 #footer.collapsed {
-  max-height: 32px; /* Hauteur du footer réduit ajustée */
+  max-height: 32px;
   padding: var(--space-xs) var(--space-lg);
   font-size: 12px;
 }
@@ -865,7 +964,7 @@ hr {
 /* Popup des critères du gisement foncier */
 #popup-gisement-info {
   position: fixed;
-  z-index: 10000; /* Très élevé pour être au-dessus de tout */
+  z-index: 10000;
   width: 350px;
   background: white; 
   border: 2px solid #222;
@@ -875,7 +974,6 @@ hr {
   display: none;
   pointer-events: auto;
   overflow: hidden;
-  /* Le positionnement exact sera géré par le JS */
 }
 
 .criteria-header {
@@ -899,6 +997,12 @@ hr {
   border-bottom: 1px solid #222;
 }
 
+.info-header {
+  background: var(--primary);
+  color: #fff;
+  border-bottom: 1px solid #222;
+}
+
 #popup-gisement-info ul {
   margin: 12px 18px;
   padding-left: 18px;
@@ -906,5 +1010,29 @@ hr {
 
 #popup-gisement-info li {
   margin: 4px 0;
+}
+
+#popup-moraux-info {
+  position: fixed;
+  z-index: 10000;
+  width: 350px;
+  background: white; 
+  border: 2px solid #222;
+  border-radius: 8px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+  font-size: 13px;
+  display: none;
+  pointer-events: auto;
+  overflow: hidden;
+}
+
+#popup-moraux-info p {
+  margin: 12px 18px;
+  line-height: 1.5;
+}
+
+.debug-visible {
+  border: 3px solid red !important;
+  background-color: rgba(255, 0, 0, 0.2) !important;
 }
 
