@@ -33,6 +33,23 @@ document.addEventListener('DOMContentLoaded', function () {
     });
   }
 
+  // Gestion des infobulles pour le zonage PLU
+  const infoIconZonagePCI = document.getElementById('info-zonagepci');
+  const popupInfoZonagePCI = document.getElementById('popup-zonagepci-info');
+  if (infoIconZonagePCI && popupInfoZonagePCI) {
+    infoIconZonagePCI.addEventListener('mouseover', function() {
+      const rect = infoIconZonagePCI.getBoundingClientRect();
+      popupInfoZonagePCI.style.position = 'fixed';
+      popupInfoZonagePCI.style.top = (rect.bottom + 5) + 'px';
+      popupInfoZonagePCI.style.left = (rect.left - 160) + 'px';
+      popupInfoZonagePCI.style.display = 'block';
+    });
+    
+    infoIconZonagePCI.addEventListener('mouseout', function() {
+      popupInfoZonagePCI.style.display = 'none';
+    });
+  }
+
   // Ouverture du PDF du mémoire
   const pdfButton = document.getElementById('open-pdf-button');
   if (pdfButton) {
@@ -110,6 +127,60 @@ document.addEventListener('DOMContentLoaded', function () {
   const layers = {
     epci: L.geoJSON(null, { 
       style: { color: '#0078ff', weight: 2 },
+      onEachFeature: function(feature, layer) {
+        if (feature.properties) {
+          let content = '<div class="popup">';
+          if (feature.properties.nom || feature.properties.NOM) {
+            content += `<h4>${feature.properties.nom || feature.properties.NOM}</h4>`;
+          }
+          content += '<table>';
+          for (const prop in feature.properties) {
+            content += `<tr><th>${prop}</th><td>${feature.properties[prop]}</td></tr>`;
+          }
+          content += '</table></div>';
+          layer.bindPopup(content, { maxHeight: 300, maxWidth: 300 });
+        }
+      }
+    }),
+    zonagepci: L.geoJSON(null, { 
+      style: function(feature) {
+        // Définition des couleurs pour chaque type de zone - selon l'image fournie
+        const zoneColors = {
+          'U': '#FF66FF',    // Rose - Zone Urbaine
+          'A': '#FFFF00',    // Jaune - Zone agricole
+          'N': '#556B2F',    // Vert olive - Zone naturelles et forestières
+          'AUC': '#8B008B',  // Violet - Zone à urbaniser avec une priorité élevée
+          'AUS': '#FF00FF',  // Magenta - Zone à urbaniser avec une priorité modérée
+        };
+
+        // Récupération du type de zone (en majuscule pour uniformiser)
+        const typeZone = feature.properties.typezone ? feature.properties.typezone.toUpperCase() : null;
+        
+        // Couleur par défaut si le type de zone n'est pas reconnu
+        let color = '#9c27b0';
+        
+        // Vérifier si le type de zone est défini et existe dans notre mapping
+        if (typeZone && zoneColors[typeZone]) {
+          color = zoneColors[typeZone];
+          return { color: color, weight: 2, fillOpacity: 0.7 };
+        } else if (typeZone) {
+          // Pour les types non listés, on peut essayer de détecter le préfixe (U, AU, A, N)
+          for (const prefix of ['U', 'AU', 'A', 'N']) {
+            if (typeZone.startsWith(prefix) && zoneColors[prefix]) {
+              color = zoneColors[prefix];
+              return { color: color, weight: 2, fillOpacity: 0.7 };
+            }
+          }
+        }
+        
+        // Pour les zones sans zonage PLU, on utilise un style transparent
+        return { 
+          color: '#999999', 
+          weight: 1, 
+          fillOpacity: 0, 
+          dashArray: '3,5' 
+        };
+      },
       onEachFeature: function(feature, layer) {
         if (feature.properties) {
           let content = '<div class="popup">';
@@ -650,13 +721,20 @@ document.addEventListener('DOMContentLoaded', function () {
   const p3 = fetch('EPCI_AMP.geojson')
     .then(r => r.json())
     .then(data => layers.epci.addData(data));
+    
+  const p4 = fetch('ZonagePCI.geojson')
+    .then(r => r.json())
+    .then(data => {
+      log('ZonagePCI chargé:', data.features ? data.features.length : 0, 'features');
+      layers.zonagepci.addData(data);
+    });
 
-  const p4 = fetch('ComPourcPropMoraux.geojson')
+  const p5 = fetch('ComPourcPropMoraux.geojson')
     .then(r => r.json())
     .then(data => layers.moraux.addData(data));
 
   // Attente du chargement de toutes les données
-  Promise.all([p1, p2, p3, p4]).then(() => {
+  Promise.all([p1, p2, p3, p4, p5]).then(() => {
     // Calcul des centroïdes pour optimisation
     function calculateCentroids() {
       log('Calcul des centroïdes', 'Démarrage...');
@@ -935,6 +1013,56 @@ document.addEventListener('DOMContentLoaded', function () {
       layers.epci.addTo(map);
     }
     
+    // Activation et contrôle d'opacité de la couche Zonage PLU
+    const zonagepciCheckbox = document.getElementById('layer-zonagepci');
+    const opacitySlider = document.getElementById('opacity-zonagepci');
+    
+    // Fonction pour appliquer l'opacité à la couche zonagePCI
+    const updateZonagePCIOpacity = () => {
+      if (layers.zonagepci && map.hasLayer(layers.zonagepci)) {
+        const opacity = parseInt(opacitySlider.value) / 100;
+        
+        // Mettre à jour le titre du slider pour afficher la valeur actuelle
+        opacitySlider.title = `Opacité: ${opacitySlider.value}%`;
+        
+        // Mise à jour du style pour les zones existantes
+        layers.zonagepci.eachLayer(function(layer) {
+          if (layer.setStyle) {
+            // Conserver le style actuel mais changer l'opacité
+            const fillOpacity = layer.feature && 
+                               (layer.feature.properties.typezone ? opacity : 0); // Garde les zones sans PLU transparentes
+            
+            layer.setStyle({
+              fillOpacity: fillOpacity
+            });
+          }
+        });
+      }
+    };
+    
+    // Événement lors du changement du slider d'opacité
+    if (opacitySlider) {
+      opacitySlider.addEventListener('input', updateZonagePCIOpacity);
+    }
+    
+    // Activation initiale si coché
+    if (zonagepciCheckbox && zonagepciCheckbox.checked) {
+      layers.zonagepci.addTo(map);
+      updateZonagePCIOpacity(); // Appliquer l'opacité initiale
+    }
+    
+    // Gestion du changement d'état de la case à cocher
+    if (zonagepciCheckbox) {
+      zonagepciCheckbox.addEventListener('change', function() {
+        if (this.checked) {
+          layers.zonagepci.addTo(map);
+          updateZonagePCIOpacity();
+        } else {
+          map.removeLayer(layers.zonagepci);
+        }
+      });
+    }
+    
     const gisementCheckbox = document.getElementById('layer-gisement');
     if (gisementCheckbox && gisementCheckbox.checked) {
       updateGisementLayer();
@@ -1053,13 +1181,27 @@ document.addEventListener('DOMContentLoaded', function () {
     }
   });
 
-  document.getElementById('color-epci').addEventListener('input', function(e) {
-    layers.epci.setStyle({ color: e.target.value });
-  });
+  const colorEpciElement = document.getElementById('color-epci');
+  if (colorEpciElement) {
+    colorEpciElement.addEventListener('input', function(e) {
+      layers.epci.setStyle({ color: e.target.value });
+    });
+  }
 
-  document.getElementById('color-communes').addEventListener('input', function(e) {
-    layers.communes.setStyle({ color: e.target.value });
-  });
+  // Vérification que l'élément existe (supprimé car couleurs définies par type de zone)
+  const colorZonagepciElement = document.getElementById('color-zonagepci');
+  if (colorZonagepciElement) {
+    colorZonagepciElement.addEventListener('input', function(e) {
+      layers.zonagepci.setStyle({ color: e.target.value });
+    });
+  }
+
+  const colorCommunesElement = document.getElementById('color-communes');
+  if (colorCommunesElement) {
+    colorCommunesElement.addEventListener('input', function(e) {
+      layers.communes.setStyle({ color: e.target.value });
+    });
+  }
 
   // Tri des couches (jQuery UI sortable)
   $('#layer-list').sortable({
@@ -1086,6 +1228,15 @@ document.addEventListener('DOMContentLoaded', function () {
   // Gestion du footer
   const footerToggle = document.getElementById('footer-toggle');
   const footer = document.getElementById('footer');
+  
+  // Gestion des notifications sur les icônes d'information
+  document.querySelectorAll('.info-icon').forEach(icon => {
+    const handleNotif = () => {
+      icon.classList.add('info-icon-notif-read');
+      icon.removeEventListener('mouseenter', handleNotif);
+    };
+    icon.addEventListener('mouseenter', handleNotif);
+  });
   
   if (footerToggle && footer) {
     footerToggle.addEventListener('click', function() {
