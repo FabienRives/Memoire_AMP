@@ -54,7 +54,7 @@ document.addEventListener('DOMContentLoaded', function () {
   const pdfButton = document.getElementById('open-pdf-button');
   if (pdfButton) {
     pdfButton.addEventListener('click', function() {
-      window.open('medias/document_utilisateur.pdf', '_blank');
+      window.open('medias/Fabien_RIVES_Memoire.pdf', '_blank');
     });
   }
 
