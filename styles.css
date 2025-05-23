@@ -1064,7 +1064,7 @@ hr {
   align-items: center;
   width: 100%;
   position: relative;
-  gap: 10px; /* Ajout d'un espace entre les éléments */
+  gap: 10px;
 }
 
 .layer-controls {
@@ -1072,25 +1072,27 @@ hr {
   align-items: center;
   margin-left: auto;
   gap: 8px;
-  width: 60px; /* Largeur fixe pour tous les contrôles */
+  width: 80px;
   justify-content: flex-end;
 }
 
 .layer-opacity {
-  width: 50px;
+  width: 150px;
   height: 16px;
   position: relative;
   transition: width 0.3s ease;
 }
 
 .layer-opacity:hover {
-  width: 70px;
+  width: 180px;
 }
+
+
 
 .opacity-slider {
   -webkit-appearance: none;
   appearance: none;
-  height: 3px;
+  height: 8px;
   width: 100%;
   background: linear-gradient(to right, rgba(255,255,255,0.3), rgba(0,120,255,0.8));
   border-radius: 3px;
@@ -1106,8 +1108,8 @@ hr {
 .opacity-slider::-webkit-slider-thumb {
   -webkit-appearance: none;
   appearance: none;
-  width: 10px;
-  height: 10px;
+  width: 12px;
+  height: 12px;
   border-radius: 50%;
   background: white;
   border: 1px solid rgba(0,0,0,0.2);
@@ -1116,8 +1118,8 @@ hr {
 }
 
 .opacity-slider::-moz-range-thumb {
-  width: 10px;
-  height: 10px;
+  width: 12px;
+  height: 12px;
   border-radius: 50%;
   background: white;
   border: 1px solid rgba(0,0,0,0.2);
@@ -1138,8 +1140,8 @@ hr {
 .opacity-control input[type="range"]::-webkit-slider-thumb {
   -webkit-appearance: none;
   appearance: none;
-  width: 12px;
-  height: 12px;
+  width: 14px;
+  height: 14px;
   border-radius: 50%;
   background: #007bff;
   border: 2px solid white;
@@ -1148,8 +1150,8 @@ hr {
 }
 
 .opacity-control input[type="range"]::-moz-range-thumb {
-  width: 12px;
-  height: 12px;
+  width: 14px;
+  height: 14px;
   border-radius: 50%;
   background: #007bff;
   border: 2px solid white;
