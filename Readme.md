@@ -85,7 +85,7 @@ Option A - Python :
 ```bash
 # Python 3
 python -m http.server 8000
-
+```
 Option B - Node.js :
 ```bash
 # Installer http-server globalement
